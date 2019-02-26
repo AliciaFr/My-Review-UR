@@ -111,6 +111,7 @@ var MyReviewApp = MyReviewApp || (function(){
 
     function onProjectButtonClicked() {
         console.log("aber jetzt");
+        window.location.href = "create-review.html";
     }
 
     function initFirebase() {
