@@ -6,6 +6,7 @@ var MyReviewApp = MyReviewApp || (function(){
     let that = {},
         dashboardView,
         dashboardController,
+        dashboardElController,
         dashboardModel,
         database,
         projectList = [
@@ -62,6 +63,8 @@ var MyReviewApp = MyReviewApp || (function(){
 
     function initController() {
         initDashboardController();
+        dashboardElController = new MyReviewApp.DashboardElController();
+        dashboardElController.addEventListener("onProjectClicked", onProjectButtonClicked);
     }
 
     function initDashboardController() {
@@ -82,37 +85,32 @@ var MyReviewApp = MyReviewApp || (function(){
     }
 
     function onDashboardFiltered(event) {
-        console.log(event.data);
         dashboardView.getFilteredList(event.data);
     }
 
-
     function onReleasedProjectsButtonClicked() {
         dashboardModel.filterByReleasedProjects();
-        console.log("Freigegebene Projekte");
         dashboardView.hideFilteredEntries(projectList);
     }
 
     function onNotReleasedProjectsButtonClicked() {
         dashboardModel.filterByNotReleasedProjects();
-        console.log("Nicht freigegebene Projekte");
-        console.log(projectList);
         dashboardView.hideFilteredEntries(projectList);
 
     }
 
     function onReviewedProjectsButtonClicked() {
         dashboardModel.filterByReviewedProjects();
-        console.log("Reviewte Projekte");
-        console.log(projectList);
         dashboardView.hideFilteredEntries(projectList);
     }
 
     function onNotReviewedProjectsButtonClicked() {
         dashboardModel.filterByNotReviewedProjects();
-        console.log("Nicht reviewte Projekte");
-        console.log(projectList);
         dashboardView.hideFilteredEntries(projectList);
+    }
+
+    function onProjectButtonClicked() {
+        console.log("aber jetzt");
     }
 
     function initFirebase() {
@@ -127,10 +125,8 @@ var MyReviewApp = MyReviewApp || (function(){
         /*let projectistArray = data.data;
         projectList = projectistArray;
         list = data;*/
-        console.log(projectList);
-        dashboardView.showAllEntries(projectList);        
-        // dashboardController.init();
-        
+        dashboardView.showAllEntries(projectList);
+        dashboardElController.init();
         initDashboardModel();
     }
 

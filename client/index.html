@@ -63,7 +63,7 @@
                     </div>
                     <div class="nine wide column">
                         <div class="ui cards" id="dashboard">
-                        
+                                
                         </div>
                     </div>
                 </div>
@@ -75,7 +75,7 @@
     <script type="text/template" id="dashboard-entry">
         <div class="card" project-id="<%= id %>">
             <div class="content">
-                <div class="header"><%= name %></div>
+                <div class="header" id="project-name"><%= name %></div>
                 <div class="description">
                     Status: <%= status %>
                 </div>
@@ -89,10 +89,10 @@
 
     <script src="resources/js/MyReviewApp.js"></script>
 
-    <script src="resources/js/DashboardView.js"></script>
     <script src="resources/js/DashboardController.js"></script>
     <script src="resources/js/DashboardModel.js"></script>
-
+    <script src="resources/js/DashboardView.js"></script>
+    <script src="resources/js/DashboardElController.js"></script>
     
     <script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
     <script src="vendors/events/events.js"></script>
