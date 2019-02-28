@@ -32,17 +32,18 @@ CreateReview.CreateReviewView = function () {
 
     function initCodeEditor() {
         myCodeMirror = CodeMirror(codeEditorElement, {
-            value: "function myScript(){return 100;}\n",  mode:  "javascript",
-            lineNumbers: true
+            value: "function myScript(){return 100;}\n",
+            mode:  "javascript",
+            lineNumbers: true,
         });
     }
 
     function init() {
-        $('.createReviewCodeBox .ui.sidebar')
+        $(".createReviewCodeBox .ui.sidebar")
             .sidebar({
-                context: $('.createReviewCodeBox .bottom.segment')
+                context: $(".createReviewCodeBox .bottom.segment"),
             })
-            .sidebar('attach events', '.createReviewCodeBox .menu .item')
+            .sidebar("attach events", ".createReviewCodeBox .menu .item")
         ;
         initCodeEditor();
     }

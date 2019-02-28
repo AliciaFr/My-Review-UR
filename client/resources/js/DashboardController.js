@@ -15,19 +15,19 @@ MyReviewApp.DashboardController = function() {
     let that = new EventPublisher();
 
     function onReleasedProjetsClicked() {
-        that.notifyAll("onReleasedProjectsClicked");
+        that.notifyAll("onReleasedProjectsClicked", "released");
     }
 
     function onNotReleasedProjectsClicked() {
-        that.notifyAll("onNotReleasedProjectsClicked");
+        that.notifyAll("onNotReleasedProjectsClicked", "not released");
     }
 
     function onReviewedProjectsClicked() {
-        that.notifyAll("onReviewedProjectsClicked");
+        that.notifyAll("onReviewedProjectsClicked", "reviewed");
     }
 
     function onNotReviewedProjectsClicked() {
-        that.notifyAll("onNotReviewedProjectsClicked");
+        that.notifyAll("onNotReviewedProjectsClicked", "not reviewed");
     }
 
     function init() {

@@ -14,55 +14,36 @@ MyReviewApp.DashboardModel = function (projectList) {
     "use strict";
 
     let that = new EventPublisher(),
-        currentList = [],
         filteredList;
 
     /* Callback --> provides the results of all applied filters */
     function provideFilteredProjects() {
-        that.notifyAll("projectsFiltered", currentList);
+        that.notifyAll("projectsFiltered", filteredList);
     }
 
-    function showAllEntries() {
-        clearFilter();
-        currentList = projectList;
+    function applyFilter(data) {
+        filteredList = [];
+        filterProjects(data);
         provideFilteredProjects();
     }
 
-    function filterByReviewedProjects() {
-        clearFilter();
-        filteredList = _.where(projectList, {status: "reviewed"});
-        currentList = filteredList;
-        provideFilteredProjects();
+    function filterProjects(category) {
+        switch (category) {
+            case "released":
+                filteredList = _.where(projectList, {status: "freigegeben"});
+                break;
+            case "not released":
+                filteredList = _.where(projectList, {status: "noch nicht freigegeben"});
+                break;
+            case "reviewed":
+                filteredList = _.where(projectList, {status: "reviewed"});
+                break;
+            case "not reviewed":
+                filteredList = _.where(projectList, {status: "noch nicht reviewed"});
+                break;
+        }
     } 
-
-    function filterByNotReviewedProjects() { 
-        clearFilter();   
-        filteredList = _.where(projectList, {status: "noch nicht reviewed"});
-        currentList = filteredList;
-        provideFilteredProjects();
-    }
-
-    function filterByReleasedProjects() {
-        clearFilter();
-        filteredList = _.where(projectList, {status: "freigegeben"});
-        currentList = filteredList;
-        provideFilteredProjects();
-    }
-
-    function filterByNotReleasedProjects() {
-        clearFilter();
-        filteredList = _.where(projectList, {status: "noch nicht freigegeben"});
-        currentList = filteredList;
-        provideFilteredProjects();;
-    }
-
-    function clearFilter() {
-        currentList = [];
-    }
  
-    that.filterByReviewedProjects = filterByReviewedProjects;
-    that.filterByNotReviewedProjects = filterByNotReviewedProjects;
-    that.filterByReleasedProjects = filterByReleasedProjects;
-    that.filterByNotReleasedProjects = filterByNotReleasedProjects;
+    that.applyFilter = applyFilter;
     return that;
 };

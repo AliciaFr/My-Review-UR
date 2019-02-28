@@ -13,7 +13,6 @@ let githubOAuth = require('github-oauth')({
     loginURI: '/auth/github',
     callbackURI: '/auth/github/callback'
 });
-let usserToken;
 
 // Login Page of the app
 app.get("/login", (req, res) => {
@@ -40,7 +39,7 @@ app.get("/home", (req, res) => {
 });
 
 githubOAuth.on('error', function(err) {
-    console.error('there was a login error', err)
+    console.error('there was a login error', err);
 });
 
 githubOAuth.on('token', function(token, serverResponse) {

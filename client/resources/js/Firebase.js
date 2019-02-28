@@ -4,6 +4,7 @@
 /**
 * Firebase: establishing connection to the database
 */
+
 var MyReviewApp = MyReviewApp || {};
 MyReviewApp.Firebase = function () {
   "use strict";

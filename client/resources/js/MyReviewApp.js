@@ -9,51 +9,9 @@ var MyReviewApp = MyReviewApp || (function(){
         dashboardElController,
         dashboardModel,
         database,
-        projectList = [
-            {
-                "id": 1,
-                "name": "MME-UE-01",
-                "status": "freigegeben"
-            },
-            {
-                "id": 2,
-                "name": "MME-UE-02",
-                "status": "freigegeben"
-            },
-            {
-                "id": 3,
-                "name": "MME-UE-03",
-                "status": "freigegeben"
-            },
-            {
-                "id": 4,
-                "name": "MME-UE-04",
-                "status": "noch nicht freigegeben"
-            },
-            {
-                "id": 5,
-                "name": "MME-UE-05",
-                "status": "noch nicht freigegeben"
-            },
-            {
-                "id": 6,
-                "name": "MME-UE-01",
-                "status": "reviewed"
-            },
-            {
-                "id": 7,
-                "name": "MME-UE-02",
-                "status": "noch nicht reviewed"
-            },
-            {
-                "id": 8,
-                "name": "MME-UE-03",
-                "status": "noch nicht reviewed"
-            }
-        ],
+        projectList,
         list,
-        dashboardEl = document.querySelector("#dashboard"),
-        dashboardItemTemplate = document.querySelector("#dashboard-entry");
+        dashboardEl = document.querySelector("#dashboard");
 
     function init() {
         initController();
@@ -76,7 +34,7 @@ var MyReviewApp = MyReviewApp || (function(){
     }
  
     function initUI() {
-        dashboardView = new MyReviewApp.DashboardView(dashboardEl, dashboardItemTemplate);
+        dashboardView = new MyReviewApp.DashboardView(dashboardEl);
     }
 
     function initDashboardModel() {
@@ -88,47 +46,50 @@ var MyReviewApp = MyReviewApp || (function(){
         dashboardView.getFilteredList(event.data);
     }
 
-    function onReleasedProjectsButtonClicked() {
-        dashboardModel.filterByReleasedProjects();
-        dashboardView.hideFilteredEntries(projectList);
+    function onReleasedProjectsButtonClicked(event) {
+        dashboardModel.applyFilter(event.data);
+        dashboardView.createContentForEntries(event.data);
+        dashboardElController.init();
     }
 
-    function onNotReleasedProjectsButtonClicked() {
-        dashboardModel.filterByNotReleasedProjects();
-        dashboardView.hideFilteredEntries(projectList);
-
+    function onNotReleasedProjectsButtonClicked(event) {
+        dashboardModel.applyFilter(event.data);
+        dashboardView.createContentForEntries(event.data);
+        dashboardElController.init();
     }
 
-    function onReviewedProjectsButtonClicked() {
-        dashboardModel.filterByReviewedProjects();
-        dashboardView.hideFilteredEntries(projectList);
+    function onReviewedProjectsButtonClicked(event) {
+        dashboardModel.applyFilter(event.data);
+        dashboardView.createContentForEntries(event.data);
+        dashboardElController.init();
     }
 
-    function onNotReviewedProjectsButtonClicked() {
-        dashboardModel.filterByNotReviewedProjects();
-        dashboardView.hideFilteredEntries(projectList);
+    function onNotReviewedProjectsButtonClicked(event) {
+        dashboardModel.applyFilter(event.data);
+        dashboardView.createContentForEntries(event.data);
+        dashboardElController.init();
     }
 
     function onProjectButtonClicked() {
-        console.log("aber jetzt");
         window.location.href = "create-review.html";
     }
 
     function initFirebase() {
-        /*database = new MyReviewApp.Firebase();
+        database = new MyReviewApp.Firebase();
         database.initDatabase();
         database.loadAllData();
-        database.addEventListener("onDataAvailable", onDataAvailable); */
+        database.addEventListener("onDataAvailable", onDataAvailable);
         onDataAvailable();
     }
 
     function onDataAvailable(data){
-        /*let projectistArray = data.data;
-        projectList = projectistArray;
-        list = data;*/
-        dashboardView.showAllEntries(projectList);
-        dashboardElController.init();
+        if (data !== undefined) {
+            projectList = data.data;
+        }
         initDashboardModel();
+        dashboardModel.applyFilter("not released");
+        dashboardView.createContentForEntries("not released");
+        dashboardElController.init();
     }
 
     that.init = init;

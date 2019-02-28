@@ -5,40 +5,54 @@
  * DashboardView: Representation of all projects and actualisation of the dashboard when a filter is applied.
  */
 
+ const dashboardItemTemplateReleased = document.querySelector("#dashboard-entry-released"),
+    dashboardItemTemplateNotReleased = document.querySelector("#dashboard-entry-not-released"),
+    dashboardItemTemplateReviewed = document.querySelector("#dashboard-entry-reviewed"),
+    dashboardItemTemplateNotReviewed = document.querySelector("#dashboard-entry-not-reviewed");
+
  var MyReviewApp = MyReviewApp || {};
- MyReviewApp.DashboardView = function (dashboardEl, dashboardItemTemplate) {
+ MyReviewApp.DashboardView = function (dashboardEl) {
     "use strict";
     let that = {}, 
         filteredListArray;
 
-    function showAllEntries(projectList) {
+    function createProjectCard(dashboardItemTemplate) {
         let entryTemplateContent = dashboardItemTemplate.innerHTML,
             createEntryTemplate = _.template(entryTemplateContent),
             entryNode = document.createElement("div");
-        for(let i = 0; i < projectList.length; i++) {
-            entryNode.innerHTML = createEntryTemplate(projectList[i]);
+        clearList();
+        for(let i = 0; i < filteredListArray.length; i++) {
+            entryNode.innerHTML = createEntryTemplate(filteredListArray[i]);
             dashboardEl.appendChild(entryNode.children[0]);
         }
     }
 
-    function hideFilteredEntries(projectList) {
-        for(let i = 0; i < projectList.length; i++) {
-            let projectID = i + 1,
-                projectEl = dashboardEl.querySelector('[project-id="' + projectID + '"]');
-            if(_.contains(filteredListArray, projectList[i])) {
-                projectEl.style.display = "";
-            } else {
-                projectEl.style.display = "none";
-            }
-          }
-      }
+    function createContentForEntries(data) {
+        switch (data) {
+            case "released":
+                createProjectCard(dashboardItemTemplateReleased);
+                break;
+            case "not released":
+                createProjectCard(dashboardItemTemplateNotReleased);
+                break;
+            case "reviewed":
+                createProjectCard(dashboardItemTemplateReviewed);
+                break;
+            case "not reviewed":
+                createProjectCard(dashboardItemTemplateNotReviewed);
+                break;
+        }
+    }
+
+    function clearList() {
+        dashboardEl.innerHTML = "";
+    }
 
     function getFilteredList(filteredList) {
         filteredListArray = filteredList;
     }
 
-    that.hideFilteredEntries = hideFilteredEntries;
+    that.createContentForEntries = createContentForEntries;
     that.getFilteredList = getFilteredList;
-    that.showAllEntries = showAllEntries;
     return that;
  };
