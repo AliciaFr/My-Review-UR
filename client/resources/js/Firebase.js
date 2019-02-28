@@ -2,10 +2,11 @@
 /* global EventPublisher*/
 
 /**
-* Firebase: establishing connetion to the database
+* Firebase: establishing connection to the database
 */
-var CookingAssistant = CookingAssistant || {};
-CookingAssistant.Firebase = function () {
+
+var MyReviewApp = MyReviewApp || {};
+MyReviewApp.Firebase = function () {
   "use strict";
 
     var that = new EventPublisher(),
@@ -22,7 +23,8 @@ CookingAssistant.Firebase = function () {
     function initDatabase(){
         firebase.initializeApp(config);
         ref = firebase.database().ref();
-        }
+    }
+
     /* get all data from database and notify a listener when all data is loaded*/
     function loadAllData(){
         ref.on("value", function(snapshot) {
