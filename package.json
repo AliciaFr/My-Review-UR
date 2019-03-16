@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@octokit/rest": "^16.16.3",
+    "animal-avatars.js": "0.0.2",
     "firebase": "^5.8.5",
     "npm-watch": "^0.6.0",
     "underscore": "^1.9.1",
