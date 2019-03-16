@@ -1,30 +1,29 @@
 {
-  "name": "my-review",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/AliciaFr/My-Review.git"
-  },
-  "author": "Alicia Fritsche",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/AliciaFr/My-Review/issues"
-  },
-  "devDependencies": {},
+  "name": "vue-firebase-tutorial",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
-    "start": "node server/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon server/index.js"
+    "start": "node main.js",
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "lint": "vue-cli-service lint"
   },
-  "homepage": "https://github.com/AliciaFr/My-Review#readme",
   "dependencies": {
-    "@octokit/rest": "^16.16.0",
-    "codemirror": "^5.43.0",
-    "express": "^4.16.4",
-    "firebase": "^5.8.4",
-    "github-oauth": "^0.2.2",
-    "semantic-ui": "^2.4.2"
+    "@octokit/rest": "^16.16.3",
+    "animal-avatars.js": "0.0.2",
+    "firebase": "^5.8.5",
+    "npm-watch": "^0.6.0",
+    "underscore": "^1.9.1",
+    "vue": "^2.6.8",
+    "vue-router": "^3.0.2"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "^3.4.1",
+    "@vue/cli-plugin-eslint": "^3.1.1",
+    "@vue/cli-service": "^3.1.1",
+    "babel-eslint": "^10.0.1",
+    "eslint": "^5.8.0",
+    "eslint-plugin-vue": "^5.0.0-0",
+    "vue-template-compiler": "^2.5.17"
   }
 }
