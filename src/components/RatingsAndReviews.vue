@@ -13,6 +13,7 @@
                     <sui-grid-column :width="3"></sui-grid-column>
                     <sui-grid-column :width="10">
                         <nav-menu></nav-menu>
+                        <reviews></reviews>
                         <ratings></ratings>
                     </sui-grid-column>
                     <sui-grid-column :width="3"></sui-grid-column>
@@ -25,11 +26,13 @@
 <script>
     import navMenu from './RatingsAndReviewsNav.vue';
     import ratings from './Ratings.vue';
+    import reviews from './Reviews.vue';
 
     export default {
         components: {
             'nav-menu': navMenu,
-            'ratings': ratings
+            'ratings': ratings,
+            'reviews': reviews
         }
     }
 </script>

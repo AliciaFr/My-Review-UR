@@ -52,7 +52,7 @@
         data() {
             return {
                 active: 'Übersicht',
-                items: ['Übersicht', 'Code'],
+                items: ['Übersicht', 'Code', 'Bewertung des Reviews'],
                 open: false
             };
         },
