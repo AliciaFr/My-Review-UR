@@ -1,26 +1,38 @@
 <template>
-  <div class="home">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
-    <button @click="logout">Logout</button>
-  </div>
+    <div class="home">
+        <app-header></app-header>
+        <dashboard></dashboard>
+        <share-project></share-project>
+        <create-review></create-review>
+        <ratings></ratings>
+        <list-messages></list-messages>
+        <write-rating></write-rating>
+    </div>
 </template>
 
 <script>
-import firebase from 'firebase';
-// @ is an alias to /src
-import HelloWorld from '@/components/HelloWorld.vue'
+    import 'semantic-ui-css/semantic.min.css';
+    import dashboardMixin from '../mixins/dashboardMixin';
+    import navBar from '../components/NavBar.vue';
+    import dashboard from '../components/Dashboard.vue';
+    import shareProject from '../components/ShareProject.vue';
+    import createReview from '../components/CreateReview.vue';
+    import allRatings from '../components/RatingsAndReviews.vue';
+    import listMessages from '../components/ListMessages.vue';
+    import writeRating from '../components/WriteRating.vue';
 
-export default {
-  name: 'home',
-  components: {
-    HelloWorld
-  },
-  methods: {
-    logout: function() {
-      firebase.auth().signOut().then(() => {
-        this.$router.replace('login')
-      })
+    export default {
+        name: 'home',
+        components: {
+            'app-header': navBar,
+            'dashboard': dashboard,
+            'share-project': shareProject,
+            'create-review': createReview,
+            'ratings': allRatings,
+            'list-messages': listMessages,
+            'write-rating': writeRating
+        },
+        methods: {},
+        mixins: [dashboardMixin]
     }
-  }
-}
 </script>

@@ -2,26 +2,10 @@
  * Created by Alicia on 10.03.2019.
  */
 
-import firebase from 'firebase'
-
-const config = {
-    apiKey: "AIzaSyA6imO5xdyJam5OhrbFfg3J5--ncU9y3Ac",
-    authDomain: "my-review-ur.firebaseapp.com",
-    databaseURL: "https://my-review-ur.firebaseio.com",
-    projectId: "my-review-ur",
-    storageBucket: "my-review-ur.appspot.com",
-    messagingSenderId: "931678872403"
-};
+let repos = [];
 
 function DatabaseHelper() {
 }
-
-
-
-DatabaseHelper.prototype.initFirebase = function () {
-    firebase.initializeApp(config);
-};
-
 
 /* creates a database entry for the user */
 DatabaseHelper.prototype.createAccount = function (dbRef, uid, username, profilePicture, gitHubName) {
@@ -40,6 +24,22 @@ DatabaseHelper.prototype.createRepo = function (dbRef, repoName, userUid, deadli
         release_date: Date.now(),
         deadline: deadline
     })
+};
+
+/* gets the stored repos of a user */
+DatabaseHelper.prototype.getAllRepos = function (dbRef) {
+    let repoEntries = dbRef.ref('users');
+    repoEntries.on('value', snap =>
+        repos.push(snap.val())
+    );
+    console.log(repos);
+    return repos;
+};
+
+DatabaseHelper.prototype.getAllUsers = function (dbRef) {
+    let userEntries = dbRef.ref('users');
+    userEntries.on('value', snap => console.log(snap.val()));
+
 };
 
 export default DatabaseHelper;

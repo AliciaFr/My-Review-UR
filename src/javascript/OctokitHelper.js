@@ -13,7 +13,6 @@ function OctokitHelper() {
 // 1
 OctokitHelper.prototype.getUserRepos = function (organization, gitHubLogin) {
     getOrgRepos (this.octokit, organization, onOrgReposAvailable, gitHubLogin);
-    return userRepos;
 };
 
 // 2: Octokit gets the repos of the organization
@@ -28,7 +27,6 @@ function getOrgRepos (octokit, organization, callback, gitHubLogin) {
 // 3: callback of getORgRepos
 function onOrgReposAvailable(octokit, repos, gitHubLogin) {
     for (let i = 0; i < repos.length; i++) {
-        console.log(repos[i]);
         listRepoContributors(octokit, repos[i]["name"], gitHubLogin, onContributorsAvailable);
     }
 }
@@ -40,7 +38,6 @@ function listRepoContributors (octokit, repo, gitHubLogin, callback) {
         owner: "uniregensburgreview",
         repo: repo
     }).then(result => {
-        console.log(result.data);
         callback(gitHubLogin, result.data, repo);
     })
 }
@@ -49,11 +46,9 @@ function listRepoContributors (octokit, repo, gitHubLogin, callback) {
 function onContributorsAvailable (gitHubLogin, contributors, repo) {
     for (let i = 0; i < contributors.length; i++) {
         if (contributors[i]["login"] === gitHubLogin) {
-            console.log("ja");
             userRepos.push(repo);
-        } else {
-            console.log("nein");
         }
+        localStorage.setItem("repos", JSON.stringify(userRepos));
     }
 
 }

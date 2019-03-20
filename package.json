@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start": "node main.js",
+    "start": "node src/main.js",
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint"
@@ -13,6 +13,8 @@
     "animal-avatars.js": "0.0.2",
     "firebase": "^5.8.5",
     "npm-watch": "^0.6.0",
+    "semantic-ui-css": "^2.4.1",
+    "semantic-ui-vue": "^0.8.1",
     "underscore": "^1.9.1",
     "vue": "^2.6.8",
     "vue-router": "^3.0.2"
