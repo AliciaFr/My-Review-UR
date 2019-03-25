@@ -3,7 +3,7 @@
  */
 
 import RepoTreeFetcherTask from '../javascript/RepoTreeFetcherTask';
-import OctokitHelper from '../javascript/OctokitHelper';
+import OctokitHelper from '../javascript/github/OctokitHelper';
 
 let octokitHelper = new OctokitHelper();
 

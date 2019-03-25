@@ -57,9 +57,58 @@ function onContributorsAvailable (gitHubLogin, contributors, repo) {
 
 }
 
-// gets the file structure of a repository and saves it into
+/**
+ * Gets the file structure of a repository (async), transforms the flat structure into a
+ * tree structures and returns the results through a passed callback
+ */
 OctokitHelper.prototype.getRepoTree = function (callback) {
-    callback(getTree(this.octokit, 'u03-birdingapp-ws-2017-18-AliciaFr', onRepoTreeAvailable));
+    /**
+     * Was hier getan werden soll:
+     *
+     * 1. Repositoriy mit getTree holen (async)
+     * 2. Baum aus Dateistruktur erstellen mit onRepoTreeAvailable (sync)
+     * 3. Die Stelle des Codes, die getRepoTree aufgerufen hat, über den 
+     * übergebenen Callback (callback) über das Ergebnis informieren
+     *
+     * Dazu ist es notwendig, das:
+     *
+     * 1. onRepoTreeAvailable ausgeführt wird, wenn getTree vollständig durchlaufen wurde
+     * 2. onRepoTreeAvailable mit den Daten arbeitet, die getTree von octokit erhalten hat
+     * 3. Der übergebene Callback (callback) muss in onRepoTreeAvailable verfügbar sein, um
+     * dort die aufrufende Stelle zu informieren oder das Ergebnis muss von der Methode, die
+     * den Verzeichnisbaum baut, zurückgegeben werden um dann mit dem Callback verwendet 
+     * werden.
+     *
+     * Zur Umsetzung wurden diese Änderungen am Code vorgenommen:  
+     *
+     * - onRepoTreeAvailable umbenannt in buildStructuredTree
+     * - buildStructuredTree gibt jetzt den erzeugten Baum per return-Anweisung zurück
+     *
+     * Umsetzung des oben beschriebenen Ablaufs:
+     *
+     * Asynchrone Methode zum Beziehen des Github-Repos wird aufgerufen. Übergeben werden
+     * die ocotokit-Anbindung (this.octokit), der Name des Repos ('u03-birdingapp-ws-2017-18-AliciaFr')
+     * und ein (inline) Callback, der ausgeführt wird, wenn getTree die asynchrone Arbeit 
+     * abgeschlossen hat.
+     */
+    getTree(this.octokit, 'u03-birdingapp-ws-2017-18-AliciaFr', function(tree) {
+        /**
+         * Dieser inline-Callback wird ausgeführt, wenn getTree das Repository bezogen hat
+         */
+        /**
+         * buildTree wird aufgerufen, um den strukturierten Dateibaum zu erstellen, die
+         * Rückgabe wird in der Variable structuredTree zwischengespeichert.
+         */
+        let structuredTree = buildStructuredTree(tree);
+        /**
+         * Der ursprünglich an getRepoTree übergebene Callback wird jetzt aufgerufen um die bezogenen
+         * und transformierten Daten an die aufrufgende Stelle zurückzugeben.
+         */
+        callback(structuredTree);
+    }); 
+
+    // Alter Code
+    //callback(getTree(this.octokit, 'u03-birdingapp-ws-2017-18-AliciaFr', onRepoTreeAvailable));
 };
 
 function getTree(octokit, repo, callback) {
@@ -74,7 +123,7 @@ function getTree(octokit, repo, callback) {
 }
 
 // Quelle: https://stackoverflow.com/questions/19531453/transform-file-directory-structure-into-tree-in-javascript
-function onRepoTreeAvailable (tree) {
+function buildStructuredTree (tree) {
     let arr = []; //your array;
     let structuredTree = {};
 
@@ -99,7 +148,7 @@ function onRepoTreeAvailable (tree) {
         }
     }
     arr.map(addnode);
-    console.log(structuredTree);
+    return structuredTree;
 }
 
 // commits a file into the repo

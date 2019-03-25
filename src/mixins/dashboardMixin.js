@@ -7,7 +7,7 @@
  */
 import firebase from 'firebase';
 import DatabaseHelper from '../javascript/FirebaseHelper';
-import OctokitHelper from '../javascript/OctokitHelper';
+import OctokitHelper from '../javascript/github/OctokitHelper';
 
 const databaseHelper = new DatabaseHelper(),
     octokitHelper = new OctokitHelper();
