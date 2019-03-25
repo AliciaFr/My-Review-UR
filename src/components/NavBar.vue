@@ -3,10 +3,14 @@
         <sui-menu borderless attached="top">
             <sui-menu-item>Logo</sui-menu-item>
             <sui-menu-menu position="right">
-                <sui-menu-item right>Nachrichten</sui-menu-item>
-                <sui-menu-item right>Bewertungen</sui-menu-item>
+                <sui-menu-item>
+                    <router-link to="/messages">Add a new blog</router-link>
+                </sui-menu-item>
+                <sui-menu-item>Bewertungen</sui-menu-item>
                 <sui-dropdown item>
-                    <sui-image src="https://api.adorable.io/avatars/285/abott@adorable.png" avatar />
+                    <sui-dropdown-header>
+<p>dfds</p>
+                    </sui-dropdown-header>
                     <sui-dropdown-menu>
                         <sui-dropdown-item>Hilfe</sui-dropdown-item>
                         <sui-dropdown-item v-on:click="logout">Abmelden</sui-dropdown-item>

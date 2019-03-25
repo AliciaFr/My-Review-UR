@@ -12,9 +12,23 @@
                 <sui-grid-row stretched>
                     <sui-grid-column :width="3"></sui-grid-column>
                     <sui-grid-column :width="10">
-                        <nav-menu></nav-menu>
-                        <reviews></reviews>
-                        <ratings></ratings>
+                        <div class="all-reviews-nav">
+                            <sui-menu pointing secondary>
+                                <a is="sui-menu-item"
+                                   v-for="tab in tabs"
+                                   :content="tab.title"
+                                   v-bind:key="tab.title"
+                                   v-bind:class="{ active: currentTab.title === tab.title }"
+                                   @click="currentTab = tab">
+                                </a>
+                            </sui-menu>
+                        </div>
+                        <keep-alive>
+                            <component v-bind:is="currentTab.component"
+                                       class="tab">
+
+                            </component>
+                        </keep-alive>
                     </sui-grid-column>
                     <sui-grid-column :width="3"></sui-grid-column>
                 </sui-grid-row>
@@ -28,7 +42,23 @@
     import ratings from './Ratings.vue';
     import reviews from './Reviews.vue';
 
+    let tabs = [
+            {
+                title: 'Erhaltene Reviews',
+                component: reviews
+            },
+            {
+                title: 'Vergebene Reviews',
+                component: ratings
+            }];
+
     export default {
+        data() {
+            return {
+                tabs: tabs,
+                currentTab: tabs[0]
+            }
+        },
         components: {
             'nav-menu': navMenu,
             'ratings': ratings,

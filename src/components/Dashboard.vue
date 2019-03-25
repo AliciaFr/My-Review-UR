@@ -22,8 +22,7 @@
                             </sui-card>
                         </sui-card-group>
                     </div>
-                    <button v-on:click="userRepos">userRepos</button>
-
+                    <button @click="userRepos">userRepos</button>
                 </sui-grid-column>
                 <sui-grid-column :width="2"></sui-grid-column>
             </sui-grid-row>
@@ -33,12 +32,12 @@
 
 <script>
     import 'semantic-ui-css/semantic.min.css';
-    import dashboardMixin from '../mixins/dashboardMixin'
-    import dashboardNav from '../components/DashboardNav.vue'
+    import dashboardMixin from '../mixins/dashboardMixin';
+    import dashboardNav from '../components/DashboardNav.vue';
 
     export default {
-        name: 'home',
         components: {
+
             'dashboard-nav': dashboardNav
         },
         methods: {},

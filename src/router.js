@@ -2,8 +2,9 @@ import firebase from 'firebase';
 import Vue from 'vue';
 import Router from 'vue-router';
 
-import Home from '@/views/Home';
-import Login from '@/views/Login';
+import Home from './views/Home.vue';
+import Login from './views/Login.vue';
+import Messages from './views/Messages.vue';
 
 Vue.use(Router);
 
@@ -29,6 +30,11 @@ const router = new Router({
             meta: {
                 requiresAuth: true
             }
+        },
+        {
+            path: '/messages',
+            name: 'Messages',
+            component: Messages
         }
     ],
     mode: "history"

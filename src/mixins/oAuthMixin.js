@@ -2,7 +2,7 @@
  * Created by Alicia on 03.03.2019.
  */
 import firebase from 'firebase';
-import DatabaseHelper from '../javascript/DatabaseHelper';
+import DatabaseHelper from '../javascript/FirebaseHelper';
 import AnimalAvatar from 'animal-avatars.js';
 
 let animalAvatar = new AnimalAvatar();
