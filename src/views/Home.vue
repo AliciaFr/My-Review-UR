@@ -5,7 +5,6 @@
         <share-project></share-project>
         <create-review></create-review>
         <ratings></ratings>
-        <list-messages></list-messages>
         <write-rating></write-rating>
     </div>
 </template>
@@ -18,7 +17,6 @@
     import shareProject from '../components/ShareProject.vue';
     import createReview from '../components/CreateReview.vue';
     import allRatings from '../components/RatingsAndReviews.vue';
-    import listMessages from '../components/ListMessages.vue';
     import writeRating from '../components/WriteRating.vue';
 
     export default {
@@ -29,7 +27,6 @@
             'share-project': shareProject,
             'create-review': createReview,
             'ratings': allRatings,
-            'list-messages': listMessages,
             'write-rating': writeRating
         },
         methods: {},

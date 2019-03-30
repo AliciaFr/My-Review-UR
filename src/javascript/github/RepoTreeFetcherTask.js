@@ -8,13 +8,13 @@ function RepoTreeFetcherTask(octokitHelper, callback) {
 }
 
 RepoTreeFetcherTask.prototype.run = function () {
-    this.octokitHelper.getRepoTree(this.onTreeAvailable);
+    this.octokitHelper.getRepoTree(this.onTreeAvailable.bind(this));
 };
 
 RepoTreeFetcherTask.prototype.onTreeAvailable = function (tree) {
-    this.tree = tree;
-    this.callback(this.tree);
-    console.log(tree);
+    this.currTree = tree;
+    this.callback(this.currTree);
+
 };
 
 export default RepoTreeFetcherTask;

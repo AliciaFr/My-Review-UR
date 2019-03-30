@@ -11,13 +11,15 @@
   "dependencies": {
     "@octokit/rest": "^16.16.3",
     "animal-avatars.js": "0.0.2",
+    "dree": "^2.1.6",
     "firebase": "^5.8.5",
     "npm-watch": "^0.6.0",
     "semantic-ui-css": "^2.4.1",
     "semantic-ui-vue": "^0.8.1",
     "underscore": "^1.9.1",
     "vue": "^2.6.8",
-    "vue-router": "^3.0.2"
+    "vue-router": "^3.0.2",
+    "vue-tree-navigation": "^4.0.1"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^3.4.1",

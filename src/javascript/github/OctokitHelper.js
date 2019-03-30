@@ -3,6 +3,8 @@
  */
 
 import Octokit from '@octokit/rest';
+import _ from 'underscore';
+import dree from 'dree';
 
 const organization = 'uniregensburgreview';
 
@@ -99,16 +101,16 @@ OctokitHelper.prototype.getRepoTree = function (callback) {
          * buildTree wird aufgerufen, um den strukturierten Dateibaum zu erstellen, die
          * Rückgabe wird in der Variable structuredTree zwischengespeichert.
          */
-        let structuredTree = buildStructuredTree(tree);
+        //let structuredTree = buildStructuredTree(tree);
+        let structuredTree = treeify(tree);
+        console.log(structuredTree);
         /**
          * Der ursprünglich an getRepoTree übergebene Callback wird jetzt aufgerufen um die bezogenen
          * und transformierten Daten an die aufrufgende Stelle zurückzugeben.
          */
-        callback(structuredTree);
-    }); 
 
-    // Alter Code
-    //callback(getTree(this.octokit, 'u03-birdingapp-ws-2017-18-AliciaFr', onRepoTreeAvailable));
+        callback(structuredTree);
+    });
 };
 
 function getTree(octokit, repo, callback) {
@@ -124,20 +126,22 @@ function getTree(octokit, repo, callback) {
 
 // Quelle: https://stackoverflow.com/questions/19531453/transform-file-directory-structure-into-tree-in-javascript
 function buildStructuredTree (tree) {
-    let arr = []; //your array;
+    let arr = [];
     let structuredTree = {};
 
-    for(let i = 0;i < tree.length; i++) {
+    for(let i = 0; i < tree.length; i++) {
         arr.push(tree[i]);
     }
 
     function addnode(obj){
         let splitpath = obj.path.replace(/^\/|\/$/g, "").split('/');
         let pointer = structuredTree;
-        for (let i = 0;i < splitpath.length; i++)
+        for (let i = 0; i < splitpath.length; i++)
         {
-            let node = { name: splitpath[i],
-                type: 'directory'};
+            let node = {
+                name: splitpath[i],
+                type: 'directory'
+            };
             if(i === splitpath.length - 1) {
                 node.sha = obj.sha;
                 node.type = obj.type;
@@ -148,7 +152,45 @@ function buildStructuredTree (tree) {
         }
     }
     arr.map(addnode);
+    _.toArray(structuredTree);
+    console.log(structuredTree);
     return structuredTree;
+}
+
+
+function treeify (files) {
+    let path = require('path'),
+        arr = [];
+
+    for(let i = 0; i < files.length; i++) {
+        arr.push(files[i]);
+    }
+
+    files = files.reduce(function(tree, f) {
+        let dir = path.dirname(f.path);
+
+        if (tree[dir]) {
+            tree[dir].children.push(f)
+        } else {
+            tree[dir] = { implied: true, children: [f] }
+        }
+
+        if (tree[f.path]) {
+            f.children = tree[f.path].children
+        } else {
+            f.children = []
+        }
+
+        return (tree[f.path] = f), tree
+    }, {});
+
+    return Object.keys(files).reduce(function(tree, f) {
+        if (files[f].implied) {
+            return tree.concat(files[f].children)
+        }
+
+        return tree
+    }, [])
 }
 
 // commits a file into the repo

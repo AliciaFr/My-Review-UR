@@ -29,13 +29,17 @@ const router = new Router({
             component: Home,
             meta: {
                 requiresAuth: true
-            }
+            },
+            children: [
+                {
+                    path: 'messages',
+                    name: 'messages',
+                    alias: '/messages',
+                    component: Messages
+                }
+            ]
+
         },
-        {
-            path: '/messages',
-            name: 'Messages',
-            component: Messages
-        }
     ],
     mode: "history"
 });
@@ -46,6 +50,7 @@ router.beforeEach((to, from, next) => {
 
     if (requiresAuth && !currentUser) next('login');
     else if (!requiresAuth && currentUser) next('home');
+    else if (!requiresAuth && currentUser) next('messages');
     else next();
 });
 

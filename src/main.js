@@ -3,10 +3,10 @@ import firebase from 'firebase';
 import App from './App.vue';
 import router from './router';
 import SuiVue from 'semantic-ui-vue';
-
+import VueTreeNavigation from 'vue-tree-navigation';
 
 Vue.config.productionTip = false;
-Vue.use(SuiVue);
+Vue.use(SuiVue, VueTreeNavigation);
 
 let app = '';
 const config = {
@@ -17,8 +17,8 @@ const config = {
     storageBucket: "my-review-ur.appspot.com",
     messagingSenderId: "931678872403"
 };
-firebase.initializeApp(config);
 
+firebase.initializeApp(config);
 firebase.auth().onAuthStateChanged(() => {
   if (!app) {
     /* eslint-disable no-new */
@@ -28,5 +28,3 @@ firebase.auth().onAuthStateChanged(() => {
     }).$mount('#app');
   }
 });
-
-// checks if logged in user already exists in database, if not it creates a new database entry
