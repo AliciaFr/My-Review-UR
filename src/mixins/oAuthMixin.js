@@ -2,8 +2,7 @@
  * Created by Alicia on 03.03.2019.
  */
 import firebase from 'firebase';
-import DatabaseHelper from '../javascript/DatabaseHelper';
-import OctokitHelper from '../javascript/OctokitHelper';
+import DatabaseHelper from '../javascript/FirebaseHelper';
 import AnimalAvatar from 'animal-avatars.js';
 
 let animalAvatar = new AnimalAvatar();
@@ -11,12 +10,9 @@ let animalAvatar = new AnimalAvatar();
 export default {
     methods: {
         gitHubLogin: function () {
-
             const loginProvider = new firebase.auth.GithubAuthProvider(),
                 database = firebase.database(),
-                databaseHelper = new DatabaseHelper(),
-                octokitHelper = new OctokitHelper();
-
+                databaseHelper = new DatabaseHelper();
             loginProvider.addScope('user');
             firebase.auth().signInWithPopup(loginProvider).then((result) => {
                 let uid = result.user.uid,
@@ -25,8 +21,8 @@ export default {
                 if (checkUser(dbRef, uid) === false) {
                     databaseHelper.createAccount(dbRef, uid, createUserName(), createProfilePicture(), gitHubLogin);
                 }
-                console.log(octokitHelper.getUserRepos("uniregensburgreview", gitHubLogin));
                 this.$router.replace('home');
+                localStorage.setItem('gitHubLogin', gitHubLogin);
             }).catch((err) => {
                 alert('Oops. ' + err.message)
             });
