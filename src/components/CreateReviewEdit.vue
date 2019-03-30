@@ -8,17 +8,8 @@
         </sui-menu>
         <sui-segment attached="bottom" style="height: 300px; padding: 0">
             <sui-sidebar-pushable>
-                <sui-sidebar animation="overlay" class="inverted" width="wide" :visible="visible">
-                    <!--<tree-menu :label="tree.label" :nodes="tree.nodes" :depth="0">
-
-                    </tree-menu>-->
-
-                    <sui-list>
-                        <tree-menu  v-for="file in getTree()"
-                                class="item"
-                                :item="file"
-                        ></tree-menu>
-                    </sui-list>
+                <sui-sidebar animation="overlay" width="wide" class="inverted" :visible="visible">
+                        <tree v-for="file in getTree()" :tree-data="file"></tree>
                 </sui-sidebar>
                 <sui-sidebar-pusher @click="visible = false">
                     <div class="ui container">
@@ -33,7 +24,7 @@
 
 <script>
     import 'semantic-ui-css/semantic.min.css';
-    import TreeMenu from '../components/CreateReviewFileStructure.vue';
+    import Tree from '../components/CreateReviewFileStructure.vue';
     import RepoTreeFetcherTask from '../javascript/github/RepoTreeFetcherTask';
     import OctokitHelper from '../javascript/github/OctokitHelper';
 
@@ -50,7 +41,7 @@
             visible: true
         }),
         components: {
-            TreeMenu
+            Tree
         },
         methods: {
             toggleMenu: function (event) {
@@ -59,13 +50,6 @@
             },
             getTree: function () {
                 console.log(myRepoTreeFetchTask.currTree);
-                /*let obj = {};
-                for (let key in myRepoTreeFetchTask.currTree) {
-                    if (myRepoTreeFetchTask.currTree.hasOwnProperty(key)) {
-                        obj.name = key.value;
-                    }
-                }
-                console.log(obj);*/
                 return myRepoTreeFetchTask.currTree;
             }
         },
@@ -75,20 +59,5 @@
 <style>
     .create-review-editor {
         padding-top: 2em;
-    }
-
-    .item {
-        cursor: pointer;
-        text-align: left;
-    }
-
-    .bold {
-        font-weight: bold;
-    }
-
-    ul {
-        padding-left: 1em;
-        line-height: 1.5em;
-        list-style-type: dot;
     }
 </style>

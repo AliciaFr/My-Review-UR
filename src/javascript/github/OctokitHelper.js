@@ -101,9 +101,7 @@ OctokitHelper.prototype.getRepoTree = function (callback) {
          * buildTree wird aufgerufen, um den strukturierten Dateibaum zu erstellen, die
          * Rückgabe wird in der Variable structuredTree zwischengespeichert.
          */
-        //let structuredTree = buildStructuredTree(tree);
-        let structuredTree = treeify(tree);
-        console.log(structuredTree);
+        let structuredTree = buildStructuredTree(tree);
         /**
          * Der ursprünglich an getRepoTree übergebene Callback wird jetzt aufgerufen um die bezogenen
          * und transformierten Daten an die aufrufgende Stelle zurückzugeben.
@@ -157,41 +155,6 @@ function buildStructuredTree (tree) {
     return structuredTree;
 }
 
-
-function treeify (files) {
-    let path = require('path'),
-        arr = [];
-
-    for(let i = 0; i < files.length; i++) {
-        arr.push(files[i]);
-    }
-
-    files = files.reduce(function(tree, f) {
-        let dir = path.dirname(f.path);
-
-        if (tree[dir]) {
-            tree[dir].children.push(f)
-        } else {
-            tree[dir] = { implied: true, children: [f] }
-        }
-
-        if (tree[f.path]) {
-            f.children = tree[f.path].children
-        } else {
-            f.children = []
-        }
-
-        return (tree[f.path] = f), tree
-    }, {});
-
-    return Object.keys(files).reduce(function(tree, f) {
-        if (files[f].implied) {
-            return tree.concat(files[f].children)
-        }
-
-        return tree
-    }, [])
-}
 
 // commits a file into the repo
 OctokitHelper.prototype.createCommit = function (encodedBlob) {

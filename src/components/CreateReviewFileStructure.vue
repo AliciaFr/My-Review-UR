@@ -1,52 +1,23 @@
 <template>
-    <div class="tree-menu">
-        <li>
-            <div
-                    :class="{ bold: isFolder() }"
-                    @click="toggle"
-            >
-                {{ item.path }}
-                <span v-if="isFolder()">[{{ isOpen ? '-' : '+' }}]</span>
-            </div>
-            <ul v-show="isOpen" v-if="isFolder()">
-                <div
-                        class="item"
-                        v-for="(child, index) in item.children"
-                        :key="index"
-                        :item="child"
-                >{{ child.path }}</div>
-            </ul>
-        </li>
+    <div class="tree">
+        <sui-list class="tree-list">
+            <node-tree :node="treeData"></node-tree>
+        </sui-list>
     </div>
-
 </template>
+
 <script>
+    import NodeTree from "./NodeTree";
+
     export default {
         props: {
-            item: Object
+            treeData: Object
         },
-        data: function () {
-            return {
-                isOpen: false,
-            }
-        },
-        name: 'tree-menu',
-        computed: {
-
-        },
-        methods: {
-            isFolder: function () {
-                return this.item.children && this.item.children.length;
-            },
-            toggle: function () {
-                if (this.isFolder()) {
-                    this.isOpen = !this.isOpen
-                }
-            }
+        components: {
+            NodeTree
         }
-    }
+    };
 </script>
 
 <style>
-
 </style>
