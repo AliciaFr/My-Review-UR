@@ -3,12 +3,18 @@ import firebase from 'firebase';
 import App from './App.vue';
 import router from './router';
 import SuiVue from 'semantic-ui-vue';
-import VueTreeNavigation from 'vue-tree-navigation';
+import { codemirror } from 'vue-codemirror'
+import 'codemirror/lib/codemirror.css'
+
+export const EventBus = new Vue();
 
 Vue.config.productionTip = false;
-Vue.use(SuiVue, VueTreeNavigation);
+Vue.use(SuiVue);
+Vue.use(codemirror);
+
 
 let app = '';
+
 const config = {
     apiKey: "AIzaSyA6imO5xdyJam5OhrbFfg3J5--ncU9y3Ac",
     authDomain: "my-review-ur.firebaseapp.com",
@@ -21,7 +27,6 @@ const config = {
 firebase.initializeApp(config);
 firebase.auth().onAuthStateChanged(() => {
   if (!app) {
-    /* eslint-disable no-new */
     app = new Vue({
       router,
       render: h => h(App)

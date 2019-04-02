@@ -4,13 +4,11 @@
 
 import Octokit from '@octokit/rest';
 import _ from 'underscore';
-import dree from 'dree';
-
+import Base64 from 'base-64';
 const organization = 'uniregensburgreview';
 
 let userRepos = [],
     octokit = new Octokit({auth: 'token ' + '2983d2539996337ea1f69a320d2a60911bdffa76'});
-
 
 function OctokitHelper() {
     this.octokit = octokit;
@@ -18,11 +16,11 @@ function OctokitHelper() {
 
 // gets all repos of the organization uniregensburgreview in which the user is contributor
 OctokitHelper.prototype.getUserRepos = function (gitHubLogin) {
-    getOrgRepos (this.octokit, onOrgReposAvailable, gitHubLogin);
+    getOrgRepos(this.octokit, onOrgReposAvailable, gitHubLogin);
 };
 
 // 2: Octokit gets the repos of the organization
-function getOrgRepos (octokit, callback, gitHubLogin) {
+function getOrgRepos(octokit, callback, gitHubLogin) {
     octokit.repos.listForOrg({
         org: organization
     }).then(result => {
@@ -39,7 +37,7 @@ function onOrgReposAvailable(octokit, repos, gitHubLogin) {
 
 
 //5: gets the contributors of a repo
-function listRepoContributors (octokit, repo, gitHubLogin, callback) {
+function listRepoContributors(octokit, repo, gitHubLogin, callback) {
     octokit.repos.listContributors({
         owner: organization,
         repo: repo
@@ -49,7 +47,7 @@ function listRepoContributors (octokit, repo, gitHubLogin, callback) {
 }
 
 // 6: callback of listRepoContributors
-function onContributorsAvailable (gitHubLogin, contributors, repo) {
+function onContributorsAvailable(gitHubLogin, contributors, repo) {
     for (let i = 0; i < contributors.length; i++) {
         if (contributors[i]["login"] === gitHubLogin) {
             userRepos.push(repo);
@@ -64,49 +62,9 @@ function onContributorsAvailable (gitHubLogin, contributors, repo) {
  * tree structures and returns the results through a passed callback
  */
 OctokitHelper.prototype.getRepoTree = function (callback) {
-    /**
-     * Was hier getan werden soll:
-     *
-     * 1. Repositoriy mit getTree holen (async)
-     * 2. Baum aus Dateistruktur erstellen mit onRepoTreeAvailable (sync)
-     * 3. Die Stelle des Codes, die getRepoTree aufgerufen hat, über den 
-     * übergebenen Callback (callback) über das Ergebnis informieren
-     *
-     * Dazu ist es notwendig, das:
-     *
-     * 1. onRepoTreeAvailable ausgeführt wird, wenn getTree vollständig durchlaufen wurde
-     * 2. onRepoTreeAvailable mit den Daten arbeitet, die getTree von octokit erhalten hat
-     * 3. Der übergebene Callback (callback) muss in onRepoTreeAvailable verfügbar sein, um
-     * dort die aufrufende Stelle zu informieren oder das Ergebnis muss von der Methode, die
-     * den Verzeichnisbaum baut, zurückgegeben werden um dann mit dem Callback verwendet 
-     * werden.
-     *
-     * Zur Umsetzung wurden diese Änderungen am Code vorgenommen:  
-     *
-     * - onRepoTreeAvailable umbenannt in buildStructuredTree
-     * - buildStructuredTree gibt jetzt den erzeugten Baum per return-Anweisung zurück
-     *
-     * Umsetzung des oben beschriebenen Ablaufs:
-     *
-     * Asynchrone Methode zum Beziehen des Github-Repos wird aufgerufen. Übergeben werden
-     * die ocotokit-Anbindung (this.octokit), der Name des Repos ('u03-birdingapp-ws-2017-18-AliciaFr')
-     * und ein (inline) Callback, der ausgeführt wird, wenn getTree die asynchrone Arbeit 
-     * abgeschlossen hat.
-     */
-    getTree(this.octokit, 'u03-birdingapp-ws-2017-18-AliciaFr', function(tree) {
-        /**
-         * Dieser inline-Callback wird ausgeführt, wenn getTree das Repository bezogen hat
-         */
-        /**
-         * buildTree wird aufgerufen, um den strukturierten Dateibaum zu erstellen, die
-         * Rückgabe wird in der Variable structuredTree zwischengespeichert.
-         */
+    getTree(this.octokit, 'u03-birdingapp-ws-2017-18-AliciaFr', function (tree) {
         let structuredTree = buildStructuredTree(tree);
-        /**
-         * Der ursprünglich an getRepoTree übergebene Callback wird jetzt aufgerufen um die bezogenen
-         * und transformierten Daten an die aufrufgende Stelle zurückzugeben.
-         */
-
+        console.log(callback);
         callback(structuredTree);
     });
 };
@@ -123,24 +81,24 @@ function getTree(octokit, repo, callback) {
 }
 
 // Quelle: https://stackoverflow.com/questions/19531453/transform-file-directory-structure-into-tree-in-javascript
-function buildStructuredTree (tree) {
+function buildStructuredTree(tree) {
     let arr = [];
     let structuredTree = {};
 
-    for(let i = 0; i < tree.length; i++) {
+    for (let i = 0; i < tree.length; i++) {
         arr.push(tree[i]);
     }
 
-    function addnode(obj){
+    function addnode(obj) {
         let splitpath = obj.path.replace(/^\/|\/$/g, "").split('/');
         let pointer = structuredTree;
-        for (let i = 0; i < splitpath.length; i++)
-        {
+        for (let i = 0; i < splitpath.length; i++) {
             let node = {
                 name: splitpath[i],
-                type: 'directory'
+                type: 'directory',
+                path: obj.path
             };
-            if(i === splitpath.length - 1) {
+            if (i === splitpath.length - 1) {
                 node.sha = obj.sha;
                 node.type = obj.type;
             }
@@ -149,25 +107,78 @@ function buildStructuredTree (tree) {
             pointer = pointer[splitpath[i]].children;
         }
     }
+
     arr.map(addnode);
     _.toArray(structuredTree);
-    console.log(structuredTree);
     return structuredTree;
 }
 
-
-// commits a file into the repo
-OctokitHelper.prototype.createCommit = function (encodedBlob) {
-    this.octokit.repos.updateFile({
-        owner: "uniregensburgreview",
-        repo: "u03-birdingapp-ws-2017-18-AliciaFr",
-        path: "vendors/underscore/underscore-min.js",
-        message: "Review",
-        content: encodedBlob,
-        sha: "f01025b7bcaab18e6b698141c854f95669a5975c"
-    }).then();
+OctokitHelper.prototype.getFile = function (repo, sha, callback) {
+    getBlob(this.octokit, repo, sha, function (blob) {
+        let decodedFile = decodeBlob(blob);
+        callback(decodedFile);
+    });
 };
 
+function getBlob(octokit, repo, sha, callback) {
+    octokit.git.getBlob({
+        owner: organization,
+        repo: repo,
+        file_sha: sha
+    }).then(result => {
+        callback(result.data.content);
+        console.log(result.data);
+    });
+}
+
+function decodeBlob(blob) {
+    return Base64.decode(blob);
+}
+
+OctokitHelper.prototype.createBranch = function (repo, reviewer, repoSha, editedFiles) {
+    let ref = 'refs/heads/ur-review-' + reviewer;
+    console.log(ref);
+    this.octokit.git.createRef({
+        owner: organization,
+        repo: repo,
+        ref: ref,
+        sha: repoSha
+    }).then(result => {
+        console.log(result.data);
+
+        if (editedFiles !== null) {
+            return myFunction(editedFiles, repo, reviewer);
+        }
+    });
+};
+
+async function myFunction(editedFiles, repo, reviewer) {
+    for (let i = 0; i < editedFiles.length; i++) {
+        await createCommit(editedFiles[i].content, repo, editedFiles[i].path, editedFiles[i].sha, reviewer);
+    }
+}
+
+// commits a file into the repo
+function createCommit(fileContent, repo, filePath, fileSha, reviewer) {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            octokit.repos.updateFile({
+                owner: organization,
+                repo: repo,
+                path: filePath,
+                message: "Review Uni Regensburg",
+                content: encodeBlob(fileContent),
+                sha: fileSha,
+                branch: 'refs/heads/ur-review-' + reviewer,
+            }).then();
+            resolve();
+        }, 3000);
+    });
+}
+
+function encodeBlob(file) {
+    return Base64.encode(file);
+}
 
 
 export default OctokitHelper;
