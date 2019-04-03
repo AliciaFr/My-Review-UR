@@ -104,6 +104,7 @@
         },
         computed: {
             getTree: function () {
+                console.log(myRepoTreeFetchTask.currTree);
                 return myRepoTreeFetchTask.currTree;
             },
 

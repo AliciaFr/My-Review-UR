@@ -2,9 +2,6 @@
     <div class="home">
         <app-header></app-header>
         <dashboard></dashboard>
-        <share-project></share-project>
-        <create-review></create-review>
-        <ratings></ratings>
         <write-rating></write-rating>
     </div>
 </template>

@@ -11,7 +11,7 @@
 </template>
 
 <script>
-    import oAuthMixin from '../mixins/oAuthMixin'
+    import oAuthMixin from '../mixins/oAuthMixin';
     export default {
         name: 'login',
         data() {
@@ -20,7 +20,6 @@
         methods: {
             gitHubLogin: oAuthMixin.methods.gitHubLogin
         }
-        //mixins: [oAuthMixin]
     }
 </script>
 

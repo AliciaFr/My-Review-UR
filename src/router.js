@@ -5,6 +5,9 @@ import Router from 'vue-router';
 import Home from './views/Home.vue';
 import Login from './views/Login.vue';
 import Messages from './views/Messages.vue';
+import CreateReview from './views/CreateReview.vue';
+import ShareProject from './components/ShareProject.vue';
+import Reviews from './components/RatingsAndReviews.vue';
 
 Vue.use(Router);
 
@@ -30,16 +33,43 @@ const router = new Router({
             meta: {
                 requiresAuth: true
             },
-            children: [
-                {
-                    path: 'messages',
-                    name: 'messages',
-                    alias: '/messages',
-                    component: Messages
-                }
-            ]
-
         },
+        {
+            path: 'messages',
+            name: 'messages',
+            alias: '/messages',
+            component: Messages,
+            meta: {
+                requiresAuth: true
+            },
+        },
+        {
+            path: 'createReview',
+            name: 'createReview',
+            alias: '/createReview',
+            component: CreateReview,
+            meta: {
+                requiresAuth: true
+            }
+        },
+        {
+            path: 'publishRepo',
+            name: 'publishRepo',
+            alias: '/publishRepo',
+            component: ShareProject,
+            meta: {
+                requiresAuth: true
+            }
+        },
+        {
+            path: 'reviews',
+            name: 'reviews',
+            alias: '/reviews',
+            component: Reviews,
+            meta: {
+                requiresAuth: true
+            }
+        }
     ],
     mode: "history"
 });
@@ -50,6 +80,7 @@ router.beforeEach((to, from, next) => {
 
     if (requiresAuth && !currentUser) next('login');
     else if (!requiresAuth && currentUser) next('home');
+    else if (!requiresAuth && currentUser) next('createReview');
     else if (!requiresAuth && currentUser) next('messages');
     else next();
 });

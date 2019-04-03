@@ -1,25 +1,5 @@
 <template>
     <div id="nav-bar">
-       <!-- <sui-menu borderless attached="top">
-            <sui-menu-item>Logo</sui-menu-item>
-            <sui-menu>
-            <sui-menu-menu >
-                <sui-menu-item @click="toMessages">
-                    Nachrichten
-                </sui-menu-item>
-                <sui-menu-item>Bewertungen</sui-menu-item>
-                <sui-dropdown item>
-                    <sui-dropdown-header>
-                    </sui-dropdown-header>
-                    <sui-dropdown-menu>
-                        <sui-dropdown-item>Hilfe</sui-dropdown-item>
-                        <sui-dropdown-item @click="logout">Abmelden</sui-dropdown-item>
-                    </sui-dropdown-menu>
-                </sui-dropdown>
-            </sui-menu-menu>
-            </sui-menu>
-        </sui-menu> -->
-
         <sui-menu borderless inverted attached="top">
             <a
                     is="sui-menu-item"
@@ -58,10 +38,9 @@
     import listMessages from '../components/ListMessages.vue';
 
     export default {
-        name: 'app',
         data() {
             return {
-                active: 'Home',
+                active: '',
                 items: ['Bewertungen', 'Nachrichten'],
             };
         },
