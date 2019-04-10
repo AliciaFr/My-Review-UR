@@ -154,6 +154,36 @@ FirebaseHelper.prototype.getProfilePicture = function(uid, callback) {
     });
 };
 
+FirebaseHelper.prototype.getUserName = function (uid) {
+    let dbRef = firebase.database();
+    let userEntries = dbRef.ref('users');
+    let myPromise = new Promise(function (resolve, reject) {
+        userEntries.on('value', snap => {
+            snap.forEach(function (child) {
+                if (uid === child.key) {
+                    resolve(child.val().username);
+                }
+            })
+        });
+    });
+    return myPromise;
+};
+
+FirebaseHelper.prototype.getGitHubLogin = function (uid) {
+    let dbRef = firebase.database();
+    let userEntries = dbRef.ref('users');
+    let myPromise = new Promise(function (resolve, reject) {
+        userEntries.on('value', snap => {
+            snap.forEach(function (child) {
+                if (uid === child.key) {
+                    resolve(child.val().gitHubName);
+                }
+            })
+        });
+    });
+    return myPromise;
+};
+
 /* Creates an entry for the repos */
 FirebaseHelper.prototype.setRepo = function (repoName, uid, testingErrors, extensions) {
     let dbRef = firebase.database();

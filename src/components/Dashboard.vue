@@ -106,48 +106,26 @@
             return {
                 currRepoName: '',
                 currUserName: '',
-                repos: [
-                    {
-                        name: 'OOP-UE-01',
-                        userName: 'Funky Giraffe',
-                    },
-                    {
-                        name: 'OOP-UE-02',
-                        userName: 'Funky Giraffe',
-                    },
-                    {
-                        name: 'MME-UE-03',
-                        userName: 'Funky Giraffe',
-                    },
-                    {
-                        name: 'MME-UE-03',
-                        userName: 'Funky Giraffe',
-                    },
-                    {
-                        name: 'MME-UE-03',
-                        userName: 'Funky Giraffe',
-                    },
-                    {
-                        name: 'MME-UE-03',
-                        userName: 'Funky Giraffe',
-                    }
-                ],
                 buttonTitle: 'Freigeben',
                 buttonIcon: 'add',
-                //repos: [],
+                repos: [],
                 repoName: '',
                 userName: '',
                 statusIcon: '',
                 statusClass: '',
                 openRepoStatus: false,
-                openNotSubmitted: false
+                openNotSubmitted: false,
+                uid: 'dUTeGpNEk0gHhavOYUgoWxYVkUr2'
             };
         },
         components: {
             'dashboard-nav': dashboardNav
         },
         mounted: function () {
-            let myRepoFetcherTask = new RepositoriesFetcherTask(firebaseHelper, octokitHelper, function (repos) {
+            let self = this;
+            let myRepoFetcherTask = new RepositoriesFetcherTask(firebaseHelper, octokitHelper, self.uid, function (repos) {
+                self.repos = repos;
+                console.log(repos);
             });
             myRepoFetcherTask.run();
             EventBus.$on('onDashboardItemClick', category => {
@@ -155,39 +133,14 @@
                 switch (category) {
                     case 'not published':
                         this.setButton('Freigeben', 'add');
-                        this.setRepos([
-                            {
-                                name: 'OOP-UE-01',
-                                userName: 'Funky Giraffe',
-                            },
-                            {
-                                name: 'OOP-UE-02',
-                                userName: 'Funky Giraffe',
-                            },
-                            {
-                                name: 'MME-UE-03',
-                                userName: 'Funky Giraffe',
-                            },
-                            {
-                                name: 'MME-UE-03',
-                                userName: 'Funky Giraffe',
-                            },
-                            {
-                                name: 'MME-UE-03',
-                                userName: 'Funky Giraffe',
-                            },
-                            {
-                                name: 'MME-UE-03',
-                                userName: 'Funky Giraffe',
-                            }
-                        ]);
+                        this.setRepos(myRepoFetcherTask.unpublishedRepos);
                         break;
                     case 'published':
                         this.setButton('Status', 'eye');
                         this.setRepos(myRepoFetcherTask.currentFirebaseRepos);
                         break;
                     case 'not reviewed':
-                        firebaseHelper.getAssignedReviews('dUTeGpNEk0gHhavOYUgoWxYVkUr2',function (repos) {
+                        firebaseHelper.getAssignedReviews(self.uid, function (repos) {
                             self.setRepos(repos);
                         });
                         this.setButton('Review erstellen', 'add');
@@ -246,7 +199,7 @@
                 octokitHelper.isSubmitted(repo, function (isSubmitted) {
                     if (isSubmitted) {
                         self.$router.replace({ name: 'publishRepo', params: { repoTitle: self.currRepoName,
-                        uid: 'dUTeGpNEk0gHhavOYUgoWxYVkUr2'}});
+                        uid: self.uid}});
                     } else {
                         self.toggleNotSubmitted();
                     }

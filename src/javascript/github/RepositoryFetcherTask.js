@@ -4,35 +4,52 @@
 
 import _ from 'underscore';
 
-function RepositoryFetcherTask(firebaseHelper, octokitHelper, callback) {
+let that;
+
+function RepositoryFetcherTask(firebaseHelper, octokitHelper, uid, callback) {
     this.callback = callback;
     this.firebaseHelper = firebaseHelper;
     this.octokitHelper = octokitHelper;
+    this.uid = uid;
 }
 
 RepositoryFetcherTask.prototype.run = function () {
-    this.firebaseHelper.getUserRepos('dUTeGpNEk0gHhavOYUgoWxYVkUr2', this.onFirebaseReposAvailable.bind(this));
+    this.firebaseHelper.getUserRepos(this.uid, this.onFirebaseReposAvailable.bind(this));
 };
 
 RepositoryFetcherTask.prototype.onFirebaseReposAvailable = function (repos) {
     this.currentFirebaseRepos = repos;
-    this.octokitHelper.getUserRepos(this.onGitHubReposAvailable.bind(this));
+    this.firebaseHelper.getUserName(this.uid).then(this.onUserNameAvailable);
+    that = this;
+};
+
+RepositoryFetcherTask.prototype.onUserNameAvailable = function (username) {
+    that.username = username;
+    that.firebaseHelper.getGitHubLogin(that.uid).then(that.onGitHubLoginAvailable);
+};
+
+RepositoryFetcherTask.prototype.onGitHubLoginAvailable = function (gitHubLogin) {
+    that.gitHubLogin = gitHubLogin;
+    that.octokitHelper.getUserRepos(that.gitHubLogin, that.username, that.onGitHubReposAvailable);
 };
 
 RepositoryFetcherTask.prototype.onGitHubReposAvailable = function (repos) {
-    this.currentGitHubRepos = repos;
-    this.mergeRepositories();
+    that.currentGitHubRepos = repos;
+    that.mergeRepositories();
 };
 
 RepositoryFetcherTask.prototype.mergeRepositories = function () {
-    let notPublishedRepos = [];
-
-    for (let i = 0; i < this.currentFirebaseRepos.length; i++) {
-        let test = _.where(this.currentGitHubRepos, this.currentFirebaseRepos[i].name);
-        console.log(test);
+    let result = [];
+    this.unpublishedRepos = [];
+    result = _.difference(this.currentFirebaseRepos, this.currentGitHubRepos);
+    for (let i = 0; i < this.currentGitHubRepos.length; i++) {
+        for (let j = 0; j < result.length; j++) {
+            if (this.currentGitHubRepos[i].name !== result[j].name) {
+                this.unpublishedRepos.push(this.currentGitHubRepos[i]);
+            }
+        }
     }
-
-    this.callback(notPublishedRepos);
+    that.callback(this.unpublishedRepos);
 };
 
 export default RepositoryFetcherTask;

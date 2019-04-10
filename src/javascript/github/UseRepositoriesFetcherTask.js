@@ -5,6 +5,9 @@
  * Needs: octokit (api object), orga (name of the organiation), user (name of the user) and
  * callback (callback to publish results)
  */
+
+let that;
+
 function UserRepositoriesFetcherTask(octokit, orga, user, callback) {
     this.callback = callback;
     this.orga = orga;
@@ -13,36 +16,38 @@ function UserRepositoriesFetcherTask(octokit, orga, user, callback) {
 }
 
 // Starts the task
-UserRepositoryFetcherTask.prototype.run = function() {
+UserRepositoriesFetcherTask.prototype.run = function() {
     // Fetches repo list (async) and processes results in checkReposForUser-method
     this.getOrgRepositories(this.checkReposForUser);
 };
 
 // Gets a list of all repos in the given organization
-UserRepositoryFetcherTask.prototype.getOrgRepositories = function(callback) {
+UserRepositoriesFetcherTask.prototype.getOrgRepositories = function(callback) {
+    that = this;
     this.octokit.repos.listForOrg({
         org: this.orga
     }).then(result => {
-        callback(result.data);
+        callback(result.data, this);
     });
 };
 
 // Gets contributors for each repository and checks for each of them if a given user
 // contributed to the repository
-UserRepositoryFetcherTask.prototype.checkReposForUser = function(repos) {
+UserRepositoriesFetcherTask.prototype.checkReposForUser = function(repos, that) {
     let resultPromises = [];
-    for (let i = 0; i < repos.length; i++) {    
+    for (let i = 0; i < repos.length; i++) {
+
         // Stores all Promises (for each repo) in one array
-        resultPromises.push(this.getContributorsFromRepo(repos[i].name));
+        resultPromises.push(that.getContributorsFromRepo(repos[i].name));
+        console.log(that.getContributorsFromRepo(repos[i].name));
     }
     // Syncs the following action by providing a callback (here filterReposForUserContribution)
     // to be called when ALL Promises have been resolved
-    Promise.all(resultPromises).then(this.filterReposForUserContribution);
+    Promise.all(resultPromises).then(that.filterReposForUserContribution);
 };
 
 // Returns a Promise which is resolved when octokit returned a list of all contributors for a given repo
-UserRepositoryFetcherTask.prototype.getContributorsFromRepo = function(repo) {
-    let that = this;
+UserRepositoriesFetcherTask.prototype.getContributorsFromRepo = function (repo) {
     // Creates a new Promise, the async action is wrapped inside the function passed as a parameter
     let myPromise = new Promise(function(resolve, reject) {
         // Everything inside this function will run async
@@ -63,15 +68,18 @@ UserRepositoryFetcherTask.prototype.getContributorsFromRepo = function(repo) {
 
 // Checks contributor list of all repos for a given user and calls original callback (see constructor)
 // with a list of all repository (names) to which the given user has contributed
-UserRepositoryFetcherTask.prototype.filterReposForUserContribution = function(repos) {
+UserRepositoriesFetcherTask.prototype.filterReposForUserContribution = function (repos) {
     let reposWithUserContribution = [];
     for(let i = 0; i < repos.length; i++) {
-        if(repos[i].contributors.include(this.user)) {
-            reposWithUserContribution.push(repos[i].name);
+        for(let j = 0; j < repos[i].contributors.length; j++) {
+            let contributor = repos[i].contributors[j].login;
+            if(contributor === that.user) {
+                reposWithUserContribution.push(repos[i].name);
+            }
         }
     }
     // Calls the original callback passed to the task's constructor
-    this.callback(reposWithUserContribution);
+    that.callback(reposWithUserContribution);
 };
 
 

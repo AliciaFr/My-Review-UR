@@ -6,101 +6,33 @@ import Octokit from '@octokit/rest';
 import _ from 'underscore';
 import Base64 from 'base-64';
 
-import UserRepositoriesFetcherTask from './UserRepositoriesFetcherTask';
+import UserRepositoriesFetcherTask from './UseRepositoriesFetcherTask';
 
 const organization = 'uniregensburgreview';
 
-let userRepos = [],
-    octokit = new Octokit({auth: 'token ' + '2983d2539996337ea1f69a320d2a60911bdffa76'});
+let octokit = new Octokit({auth: 'token ' + '2983d2539996337ea1f69a320d2a60911bdffa76'});
 
 function OctokitHelper() {
     this.octokit = octokit;
 }
 
-
-// gets all repos of the organization uniregensburgreview in which the user is contributor
-OctokitHelper.prototype.getOrgRepos = function (callback) {
-    getOrgRepos(this.octokit, function (repos) {
-        let orgrepos = onOrgReposAvailable(repos);
-        callback(orgrepos);
-    });
-};
-
-OctokitHelper.prototype.getUserRepos = function (callback) {
+OctokitHelper.prototype.getUserRepos = function (gitHubLogin, username, callback) {
  // Creates task to get all repos from "organization" to which "user" has contributed
  // Last parameter is a callback function, called when task is completed
- let task = new UserRepositoriesFetcherTask(octokit, "organization", "user", function(repos) {
-    callback(repos);
+ let task = new UserRepositoriesFetcherTask(octokit, organization, gitHubLogin, function(repos) {
+     let userRepos = [];
+     for (let i = 0; i < repos.length; i++) {
+         userRepos.push({
+             name: repos[i],
+             userName: username
+         });
+     }
+    callback(userRepos);
  });
  task.run();
 };
 
-/*
 
-// 2: Octokit gets the repos of the organization
-function getOrgRepos(octokit, callback) {
-    octokit.repos.listForOrg({
-        org: organization
-    }).then(result => {
-        callback(result.data);
-    });
-}
-
-// 3: callback of getORgRepos
-function onOrgReposAvailable(repos) {
-    let orgRepos = [];
-    for (let i = 0; i < repos.length; i++) {
-        orgRepos.push(repos[i]);
-    }
-    return orgRepos;
-}
-
-OctokitHelper.prototype.getContributors = function (callback) {
-    let octokit = this.octokit;
-    this.getOrgRepos(function (repos) {
-        for (let i = 0; i < repos.length; i++) {
-            listRepoContributors(octokit, repos[i].name, function (contributors) {
-                callback(contributors, repos[i].name);
-            });
-        }
-    });
-
-};
-
-OctokitHelper.prototype.getUserRepos = function (callback) {
-  // this.getContributors(function (contributors, repo) {
-  //   let userRepos = onContributorsAvailable(contributors, repo);
-  //   callback(userRepos);
-  //   console.log(userRepos);
-  });
-  let userRepos = ["u03-birdingapp-ws-2017-18-AliciaFr", "My-Review-UR"];
-  callback(userRepos);
-};
-
-
-function onContributorsAvailable (contributors, repo) {
-    let userRepos = [];
-    for (let i = 0; i < contributors.length; i++) {
-        if (contributors[i]["login"] === 'AliciaFr') {
-            userRepos.push(repo);
-        }
-    }
-    return userRepos;
-}
-
-
-//5: gets the contributors of a repo
-function listRepoContributors(octokit, repo, callback) {
-    octokit.repos.listContributors({
-        owner: organization,
-        repo: repo
-    }).then(result => {
-        callback(result.data);
-    })
-}
-
-// 6: callback of listRepoContributors
-*/
 
 /**
  * Gets the file structure of a repository (async), transforms the flat structure into a
