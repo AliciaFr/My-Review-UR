@@ -30,6 +30,7 @@ const router = new Router({
             path: '/home',
             name: 'Home',
             component: Home,
+            props: true,
             meta: {
                 requiresAuth: true
             },

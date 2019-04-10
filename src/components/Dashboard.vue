@@ -22,7 +22,7 @@
                                     <sui-card-header>{{ repo.name }}</sui-card-header>
                                     <sui-card-meta>{{ repo.userName }}</sui-card-meta>
                                 </sui-card-content>
-                                <sui-button attached="bottom" @click="onDashboardItemClicked()">
+                                <sui-button attached="bottom" @click="onDashboardItemClicked(repo)">
                                     <sui-icon :name="buttonIcon"></sui-icon>
                                     {{ buttonTitle }}
                                 </sui-button>
@@ -33,7 +33,21 @@
                 <sui-grid-column :width="2"></sui-grid-column>
             </sui-grid-row>
         </sui-grid>
-        <sui-modal v-model="openAlert" animation="scale" :closable="false">
+        <sui-modal v-model="openNotSubmitted" animation="fly up">
+            <sui-modal-header>Abgabetermin</sui-modal-header>
+            <sui-modal-content>
+                <sui-modal-description>
+                    <sui-header>Der Abgabetermin für dein Projekt ist noch nicht vorbei.</sui-header>
+                    <p>Du kannst dein Projekt erst abgeben, wenn der Abgabetermin vorbei ist. Probiere es dann noch einmal.</p>
+                </sui-modal-description>
+            </sui-modal-content>
+            <sui-modal-actions>
+                <sui-button color="black" @click.native="toggleNotSubmitted()">
+                    OK
+                </sui-button>
+            </sui-modal-actions>
+        </sui-modal>
+        <sui-modal v-model="openRepoStatus" animation="scale">
             <sui-modal-header>Der aktuelle Fortschritt zu deinem freigegebenen Projekt.</sui-modal-header>
             <sui-modal-content>
                 <sui-modal-description>
@@ -41,12 +55,12 @@
                     <div>
                         <sui-step-group step-number="three">
                             <sui-step
+                                    v-bind:class="{ statusClass }"
                                     title="Zuweisung"
                                     description="Dein Projekt wird einem anderen Nutzer zugewiesen."
                                     icon="check">
-                                </sui-step>
+                            </sui-step>
                             <sui-step
-                                    active
                                     title="Review erstellen"
                                     description="Dein Projekt wurde bewertet."
                                     icon="sync alternate">
@@ -62,7 +76,7 @@
                 </sui-modal-description>
             </sui-modal-content>
             <sui-modal-actions>
-                <sui-button color="black" @click.native="toggleAlert()">
+                <sui-button color="black" @click.native="toggleRepoStatus()">
                     Schließen
                 </sui-button>
             </sui-modal-actions>
@@ -75,17 +89,30 @@
     import dashboardMixin from '../mixins/dashboardMixin';
     import dashboardNav from '../components/DashboardNav.vue';
     import { EventBus } from '../main';
+    import FirebaseHelper from '../javascript/FirebaseHelper';
+    import OctokitHelper from '../javascript/github/OctokitHelper';
+    import RepositoriesFetcherTask from '../javascript/github/RepositoryFetcherTask';
+    import RepoStatusFetcherTask from '../javascript/database/RepoStatusFetcherTask';
+
+    let octokitHelper = new OctokitHelper(),
+        firebaseHelper = new FirebaseHelper();
+
 
     export default {
+        props: {
+
+        },
         data: function() {
             return {
+                currRepoName: '',
+                currUserName: '',
                 repos: [
                     {
-                        name: 'MME-UE-03',
+                        name: 'OOP-UE-01',
                         userName: 'Funky Giraffe',
                     },
                     {
-                        name: 'MME-UE-03',
+                        name: 'OOP-UE-02',
                         userName: 'Funky Giraffe',
                     },
                     {
@@ -110,24 +137,59 @@
                 //repos: [],
                 repoName: '',
                 userName: '',
-                openAlert: false
+                statusIcon: '',
+                statusClass: '',
+                openRepoStatus: false,
+                openNotSubmitted: false
             };
         },
         components: {
             'dashboard-nav': dashboardNav
         },
         mounted: function () {
+            let myRepoFetcherTask = new RepositoriesFetcherTask(firebaseHelper, octokitHelper, function (repos) {
+            });
+            myRepoFetcherTask.run();
             EventBus.$on('onDashboardItemClick', category => {
-                console.log(this);
-                console.log(category);
+                let self = this;
                 switch (category) {
                     case 'not published':
                         this.setButton('Freigeben', 'add');
+                        this.setRepos([
+                            {
+                                name: 'OOP-UE-01',
+                                userName: 'Funky Giraffe',
+                            },
+                            {
+                                name: 'OOP-UE-02',
+                                userName: 'Funky Giraffe',
+                            },
+                            {
+                                name: 'MME-UE-03',
+                                userName: 'Funky Giraffe',
+                            },
+                            {
+                                name: 'MME-UE-03',
+                                userName: 'Funky Giraffe',
+                            },
+                            {
+                                name: 'MME-UE-03',
+                                userName: 'Funky Giraffe',
+                            },
+                            {
+                                name: 'MME-UE-03',
+                                userName: 'Funky Giraffe',
+                            }
+                        ]);
                         break;
                     case 'published':
                         this.setButton('Status', 'eye');
+                        this.setRepos(myRepoFetcherTask.currentFirebaseRepos);
                         break;
                     case 'not reviewed':
+                        firebaseHelper.getAssignedReviews('dUTeGpNEk0gHhavOYUgoWxYVkUr2',function (repos) {
+                            self.setRepos(repos);
+                        });
                         this.setButton('Review erstellen', 'add');
                         break;
                     case 'reviewed':
@@ -136,14 +198,20 @@
                 }
             });
         },
+        computed: {
+
+        },
         methods: {
-            onDashboardItemClicked: function () {
+            onDashboardItemClicked: function (item) {
+                this.currRepoName = item.name;
+                this.currUserName = item.userName;
+                EventBus.$emit('onDashboardCardClicked', [this.currRepoName, this.currUserName]);
                 switch (this.buttonTitle) {
                     case 'Freigeben':
-                        this.$router.replace('publishRepo');
+                        this.publishRepo(this.currRepoName);
                         break;
                     case 'Status':
-                        this.toggleAlert();
+                        this.toggleRepoStatus();
                         break;
                     case 'Review erstellen':
                         this.$router.replace('createReview');
@@ -157,12 +225,32 @@
                 this.buttonTitle = title;
                 this.buttonIcon = icon;
             },
+            setRepos (repos) {
+                this.repos = repos;
+            },
             goBack() {
                 this.$router.replace(-1);
             },
-            toggleAlert() {
-                this.openAlert = !this.openAlert;
-
+            toggleRepoStatus() {
+                this.openRepoStatus = !this.openRepoStatus;
+                let myRepoStatusFetcherTask = new RepoStatusFetcherTask(this.currRepoName, firebaseHelper, this.onStatusAvailable);
+                myRepoStatusFetcherTask.run();
+            },
+            toggleNotSubmitted() {
+                this.openNotSubmitted = !this.openNotSubmitted;
+            },
+            onStatusAvailable(status) {
+            },
+            publishRepo(repo) {
+                self = this;
+                octokitHelper.isSubmitted(repo, function (isSubmitted) {
+                    if (isSubmitted) {
+                        self.$router.replace({ name: 'publishRepo', params: { repoTitle: self.currRepoName,
+                        uid: 'dUTeGpNEk0gHhavOYUgoWxYVkUr2'}});
+                    } else {
+                        self.toggleNotSubmitted();
+                    }
+                });
             }
         },
         mixins: [dashboardMixin]

@@ -20,7 +20,7 @@
                               :active="isActive('Account')"
                               content="Account"
                               @click="select('Account')">
-                    <sui-image src="https://api.adorable.io/avatars/285/abott@adorable.png" avatar></sui-image>
+                    <sui-image :src="profilePicture" avatar></sui-image>
                     <sui-dropdown-menu>
                         <sui-dropdown-item>Hilfe</sui-dropdown-item>
                         <sui-dropdown-item @click="logout">Abmelden</sui-dropdown-item>
@@ -36,15 +36,24 @@
     import firebase from 'firebase';
     import 'semantic-ui-css/semantic.min.css';
     import listMessages from '../components/ListMessages.vue';
+    import FirebaseHelper from '../javascript/FirebaseHelper';
+
+    let myFirebaseHelper = new FirebaseHelper();
 
     export default {
         data() {
             return {
                 active: '',
                 items: ['Bewertungen', 'Nachrichten'],
+                profilePicture: ''
             };
         },
-
+        mounted: function () {
+            let self = this;
+            myFirebaseHelper.getProfilePicture('dUTeGpNEk0gHhavOYUgoWxYVkUr2', function (profilePicture) {
+                self.profilePicture = profilePicture;
+            });
+        },
         methods: {
             logout: function () {
                 firebase.auth().signOut().then(() => {
@@ -60,6 +69,9 @@
             select(name) {
                 this.active = name;
             },
+            setProfilePicture: function () {
+
+            }
         },
     }
 </script>

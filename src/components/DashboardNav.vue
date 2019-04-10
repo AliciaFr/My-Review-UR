@@ -14,7 +14,6 @@
     import { EventBus } from '../main';
 
     export default {
-
         data: function () {
           return {
               items: [{
@@ -60,7 +59,6 @@
                 this.active = item.label;
                 this.category = item.category;
                 EventBus.$emit('onDashboardItemClick', this.category);
-                console.log(item.category);
             },
         }
     }

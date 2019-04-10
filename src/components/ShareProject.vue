@@ -4,6 +4,13 @@
             <sui-grid-row stretched>
                 <sui-grid-column :width="4"></sui-grid-column>
                 <sui-grid-column :width="8">
+                    <sui-header size="huge">{{ repoTitle }}</sui-header>
+                </sui-grid-column>
+                <sui-grid-column :width="4"></sui-grid-column>
+            </sui-grid-row>
+            <sui-grid-row stretched>
+                <sui-grid-column :width="4"></sui-grid-column>
+                <sui-grid-column :width="8">
                     <div>
                         <sui-message attached>
                             <sui-message-header>Freigabe Deines Projekts</sui-message-header>
@@ -15,12 +22,11 @@
                             <sui-form>
                                 <sui-form-field>
                                     <label>Testing-Fehler</label>
-                                    <textarea placeholder="Beschreibe bitte kurz eventuelle Fehler, die beim Testen deines Projekts aufgetreten sind."></textarea>
+                                    <textarea v-model="testingErrors" placeholder="Beschreibe bitte kurz eventuelle Fehler, die beim Testen deines Projekts aufgetreten sind."></textarea>
                                 </sui-form-field>
                                 <sui-form-field>
                                     <label>Zusätzliche, von dir implementierte Erweiterungen</label>
-                                    <textarea
-                                            placeholder="Bechreibe eventuelle funktionale Erweiterungen deines Projekts, die über die Mindestanforderungen hinaus gehen"></textarea>
+                                    <textarea v-model="extensions" placeholder="Bechreibe eventuelle funktionale Erweiterungen deines Projekts, die über die Mindestanforderungen hinaus gehen"></textarea>
                                 </sui-form-field>
                             </sui-form>
                             <sui-message warning icon="warning circle">
@@ -29,8 +35,8 @@
                             </sui-message>
                         </sui-segment>
                         <sui-message attached>
-                            <sui-button color="black">Projekt freigeben</sui-button>
-
+                            <sui-button @click="cancel()" icon="cancel" label-position="left">Abbrechen</sui-button>
+                            <sui-button icon="right arrow" label-position="right" floated="right" color="black" @click="publishRepo()">Projekt freigeben</sui-button>
                         </sui-message>
                     </div>
                 </sui-grid-column>
@@ -39,6 +45,38 @@
         </sui-grid>
     </div>
 </template>
+
+<script>
+    import FirebaseHelper from '../javascript/FirebaseHelper';
+
+    let firebaseHelper = new FirebaseHelper();
+
+    export default {
+        data: function () {
+            return {
+                repoTitle: '',
+                testingErrors: '',
+                extensions: ''
+            }
+        },
+        created() {
+            this.repoTitle = this.$route.params.repoTitle;
+        },
+        methods: {
+            assignRepo: function () {
+                return this.$route.params.uid;
+            },
+            publishRepo: function () {
+                firebaseHelper.setRepo(this.repoTitle, this.$route.params.uid, this.testingErrors, this.extensions);
+                firebaseHelper.setReview(this.repoTitle, this.assignRepo());
+                this.$router.replace('home');
+            },
+            cancel: function () {
+                this.$router.replace('home');
+            }
+        }
+    }
+</script>
 
 <style>
     .share-project {
