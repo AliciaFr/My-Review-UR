@@ -5,6 +5,9 @@
 import Octokit from '@octokit/rest';
 import _ from 'underscore';
 import Base64 from 'base-64';
+
+import UserRepositoriesFetcherTask from './UserRepositoriesFetcherTask';
+
 const organization = 'uniregensburgreview';
 
 let userRepos = [],
@@ -14,6 +17,7 @@ function OctokitHelper() {
     this.octokit = octokit;
 }
 
+
 // gets all repos of the organization uniregensburgreview in which the user is contributor
 OctokitHelper.prototype.getOrgRepos = function (callback) {
     getOrgRepos(this.octokit, function (repos) {
@@ -21,6 +25,17 @@ OctokitHelper.prototype.getOrgRepos = function (callback) {
         callback(orgrepos);
     });
 };
+
+OctokitHelper.prototype.getUserRepos = function (callback) {
+ // Creates task to get all repos from "organization" to which "user" has contributed
+ // Last parameter is a callback function, called when task is completed
+ let task = new UserRepositoriesFetcherTask(octokit, "organization", "user", function(repos) {
+    callback(repos);
+ });
+ task.run();
+};
+
+/*
 
 // 2: Octokit gets the repos of the organization
 function getOrgRepos(octokit, callback) {
@@ -53,14 +68,15 @@ OctokitHelper.prototype.getContributors = function (callback) {
 };
 
 OctokitHelper.prototype.getUserRepos = function (callback) {
-  /*this.getContributors(function (contributors, repo) {
-     let userRepos = onContributorsAvailable(contributors, repo);
-     callback(userRepos);
-     console.log(userRepos);
-  });*/
+  // this.getContributors(function (contributors, repo) {
+  //   let userRepos = onContributorsAvailable(contributors, repo);
+  //   callback(userRepos);
+  //   console.log(userRepos);
+  });
   let userRepos = ["u03-birdingapp-ws-2017-18-AliciaFr", "My-Review-UR"];
   callback(userRepos);
 };
+
 
 function onContributorsAvailable (contributors, repo) {
     let userRepos = [];
@@ -84,7 +100,7 @@ function listRepoContributors(octokit, repo, callback) {
 }
 
 // 6: callback of listRepoContributors
-
+*/
 
 /**
  * Gets the file structure of a repository (async), transforms the flat structure into a
