@@ -38,7 +38,8 @@
             <sui-modal-content>
                 <sui-modal-description>
                     <sui-header>Der Abgabetermin für dein Projekt ist noch nicht vorbei.</sui-header>
-                    <p>Du kannst dein Projekt erst abgeben, wenn der Abgabetermin vorbei ist. Probiere es dann noch einmal.</p>
+                    <p>
+                        Du kannst dein Projekt erst abgeben, wenn der Abgabetermin vorbei ist. Probiere es dann noch einmal.</p>
                 </sui-modal-description>
             </sui-modal-content>
             <sui-modal-actions>
@@ -88,21 +89,21 @@
     import 'semantic-ui-css/semantic.min.css';
     import dashboardMixin from '../mixins/dashboardMixin';
     import dashboardNav from '../components/DashboardNav.vue';
-    import { EventBus } from '../main';
+    import {EventBus} from '../main';
     import FirebaseHelper from '../javascript/FirebaseHelper';
     import OctokitHelper from '../javascript/github/OctokitHelper';
     import RepositoriesFetcherTask from '../javascript/github/RepositoryFetcherTask';
     import RepoStatusFetcherTask from '../javascript/database/RepoStatusFetcherTask';
+    import LocalStorageHelper from '../javascript/LocalStorageHelper';
 
     let octokitHelper = new OctokitHelper(),
-        firebaseHelper = new FirebaseHelper();
+        firebaseHelper = new FirebaseHelper(),
+        myLocalStorageHelper = new LocalStorageHelper();
 
 
     export default {
-        props: {
-
-        },
-        data: function() {
+        props: {},
+        data: function () {
             return {
                 currRepoName: '',
                 currUserName: '',
@@ -125,7 +126,6 @@
             let self = this;
             let myRepoFetcherTask = new RepositoriesFetcherTask(firebaseHelper, octokitHelper, self.uid, function (repos) {
                 self.repos = repos;
-                console.log(repos);
             });
             myRepoFetcherTask.run();
             EventBus.$on('onDashboardItemClick', category => {
@@ -133,29 +133,32 @@
                 switch (category) {
                     case 'not published':
                         this.setButton('Freigeben', 'add');
-                        this.setRepos(myRepoFetcherTask.unpublishedRepos);
+                            this.setRepos(myRepoFetcherTask.unpublishedRepos);
+
                         break;
                     case 'published':
                         this.setButton('Status', 'eye');
                         this.setRepos(myRepoFetcherTask.currentFirebaseRepos);
                         break;
                     case 'not reviewed':
-                        firebaseHelper.getAssignedReviews(self.uid, function (repos) {
-                            self.setRepos(repos);
+                        firebaseHelper.getAssignedReviews(self.uid, function (reviews) {
+                            self.setRepos(reviews);
                         });
                         this.setButton('Review erstellen', 'add');
                         break;
                     case 'reviewed':
+                        firebaseHelper.getCompletedReviews(self.uid, function (reviews) {
+                            self.repos = reviews;
+                        });
                         this.setButton('Review ansehen', 'eye');
                         break;
                 }
             });
         },
-        computed: {
-
-        },
+        computed: {},
         methods: {
             onDashboardItemClicked: function (item) {
+                let self = this;
                 this.currRepoName = item.name;
                 this.currUserName = item.userName;
                 EventBus.$emit('onDashboardCardClicked', [this.currRepoName, this.currUserName]);
@@ -167,7 +170,18 @@
                         this.toggleRepoStatus();
                         break;
                     case 'Review erstellen':
-                        this.$router.replace('createReview');
+                        firebaseHelper.getUid(this.currUserName).then(function (uid) {
+                            octokitHelper.getMasterBranchSha(self.currRepoName, function (sha) {
+                                firebaseHelper.setReviewBranchSha(self.currRepoName, uid, myLocalStorageHelper.getUserId(), sha);
+                            });
+                        });
+                        this.$router.replace({
+                            name: 'createReview', params: {
+                                repoTitle: this.currRepoName,
+                                repoAuthor: this.currUserName,
+                                prevRoute: 'dashboard'
+                            }
+                        });
                         break;
                     case 'Review ansehen':
                         this.$router.replace('reviews');
@@ -198,8 +212,12 @@
                 self = this;
                 octokitHelper.isSubmitted(repo, function (isSubmitted) {
                     if (isSubmitted) {
-                        self.$router.replace({ name: 'publishRepo', params: { repoTitle: self.currRepoName,
-                        uid: self.uid}});
+                        self.$router.replace({
+                            name: 'publishRepo', params: {
+                                repoTitle: self.currRepoName,
+                                uid: self.uid
+                            }
+                        });
                     } else {
                         self.toggleNotSubmitted();
                     }

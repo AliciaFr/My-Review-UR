@@ -9,7 +9,7 @@ LocalStorageHelper.prototype.addUserId = function (uid) {
 };
 
 LocalStorageHelper.prototype.getUserId = function () {
-    localStorage.getItem('uid');
+    return localStorage.getItem('uid');
 };
 
 LocalStorageHelper.prototype.addEntry = function (name, fileSha, filePath, content) {

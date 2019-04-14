@@ -5,10 +5,8 @@
                 <sui-grid-column :width="2"></sui-grid-column>
                 <sui-grid-column :width="12">
                     <sui-header size="huge">
-                        Repo Name
-                        <sui-header-subheader>
-                            Username
-                        </sui-header-subheader>
+                        {{ repoTitle }}
+                        <sui-header-subheader>{{ repoAuthor }}</sui-header-subheader>
                     </sui-header>
                 </sui-grid-column>
                 <sui-grid-column :width="2"></sui-grid-column>
@@ -23,21 +21,22 @@
                                :content="tab.title"
                                v-bind:key="tab.title"
                                v-bind:class="{ active: currentTab.title === tab.title }"
-                               @click="currentTab = tab">
+                               @click="changeTab(tab)">
                             </a>
                         </sui-menu>
                     </div>
                     <keep-alive>
                         <component v-bind:is="currentTab.component"
-                                   class="tab">
+                                   class="tab"
+                        :repoName="repoTitle"
+                        :repoAuthor="repoAuthor">
 
                         </component>
                     </keep-alive>
                     <div class="create-review-buttons">
                         <sui-button @click.native="toggle" icon="cancel" label-position="left" floated="left"
-                                    color="black">Abbrechen
-                        </sui-button>
-                        <sui-button icon="right arrow" label-position="right" floated="right" @click="createReview()">Weiter</sui-button>
+                                    color="black">{{ backButton }}</sui-button>
+                        <sui-button icon="right arrow" label-position="right" floated="right" @click="handleForwardButton(forwardButton)">{{ forwardButton }}</sui-button>
                         <sui-modal v-model="open" animation="fly up" :closable="false">
                             <sui-modal-header>Achtung</sui-modal-header>
                             <sui-modal-content>
@@ -85,22 +84,23 @@
     import {EventBus} from '../main';
     import OctokitHelper from '../javascript/github/OctokitHelper';
     import LocalStorageHelper from '../javascript/LocalStorageHelper';
+    import FirebaseHelper from '../javascript/FirebaseHelper';
 
     let tabs = [
         {
             title: 'Overview',
-            component: createReviewOverview
+            component: createReviewOverview,
+            id: 1
         },
         {
             title: 'Editor',
-            component: createReviewEditor
-        }, {
-            title: 'Bewertung des Reviews',
-            component: createReviewOverview
+            component: createReviewEditor,
+            id: 2
         }];
 
     let octokitHelper = new OctokitHelper();
     let localStorageHelper = new LocalStorageHelper();
+    let myFirebaseHelper = new FirebaseHelper();
 
     export default {
         data() {
@@ -108,8 +108,31 @@
                 tabs: tabs,
                 currentTab: tabs[0],
                 open: false,
-                openWarning: false
+                openWarning: false,
+                repoTitle: '',
+                repoAuthor: '',
+                prevRoute: '',
+                forwardButton: 'Weiter zum Code',
+                backButton: '',
+                reviewer: '',
+                commitSha: ''
             };
+        },
+        mounted() {
+        },
+        created() {
+            this.repoTitle = this.$route.params.repoTitle;
+            this.repoAuthor = this.$route.params.repoAuthor;
+            this.prevRoute = this.$route.params.prevRoute;
+            if (this.prevRoute === 'reviews') {
+                tabs.push({
+                    title: 'Bewertung des Reviews',
+                    component: createReviewOverview
+                });
+                this.setBackButtonTitle('Zurück');
+            } else if (this.prevRoute === 'dashboard') {
+                this.setBackButtonTitle('Abbrechen');
+            }
         },
         methods: {
             toggle() {
@@ -118,23 +141,19 @@
             toggleWarning() {
                 this.openWarning = !this.openWarning
             },
-            allStorage: function () {
-                let values = [],
-                    keys = Object.keys(localStorage),
-                    i = keys.length;
-
-                while (i--) {
-                    values.push(localStorage.getItem(keys[i]));
-                }
-                return values;
-            },
             createReview: function () {
+                let self = this;
                 let editedFiles = localStorageHelper.getAllFiles();
-                let repo = 'u03-birdingapp-ws-2017-18-AliciaFr';
-                let reviewer = 'userY';
-                let masterSha = 'c58806081b5f14e95e1eeaa52b98603a3d30803f';
+                let repo = this.repoTitle;
+                let repoOwner = this.repoAuthor;
+                let reviewer = localStorageHelper.getUserId();
                 if (editedFiles !== null) {
-                    octokitHelper.createBranch(repo, reviewer, masterSha, editedFiles);
+                    myFirebaseHelper.getReviewBranchSha(repo, repoOwner, reviewer, function (commitSha) {
+                        repoOwner = repoOwner.replace(/\s/g, '-');
+                        //octokitHelper.createBranch(repo, repoOwner, commitSha, editedFiles);
+                    });
+                    myFirebaseHelper.setReviewStatus(repo, repoOwner, "completed");
+                    self.goToHome();
                     localStorageHelper.deleteAllFiles();
                     // implement: change review status in database
                 } else {
@@ -142,6 +161,34 @@
                 }
             },
             goBack() {
+                this.$router.replace('home');
+            },
+            changeTab (tab) {
+                this.currentTab = tab;
+                this.setForwardButtonTitle(tab);
+            },
+            setForwardButtonTitle (tab) {
+                if (tab.id === 1) {
+                    this.forwardButton = 'Weiter zum Code';
+                } else if (tab.id === 2) {
+                    this.forwardButton = 'Review abschicken';
+                } else if (tab.id === 3) {
+                    console.log(tab);
+                }
+            },
+            setBackButtonTitle (buttonTitle) {
+                this.backButton = buttonTitle;
+            },
+            handleForwardButton (buttonTitle) {
+                if (this.prevRoute === 'dashboard') {
+                    if (buttonTitle === 'Weiter zum Code') {
+                        this.changeTab(tabs[1]);
+                    } else if (buttonTitle === 'Review abschicken') {
+                        this.createReview();
+                    }
+                }
+            },
+            goToHome () {
                 this.$router.replace('home');
             }
         },
@@ -162,5 +209,4 @@
     .create-review-buttons {
         padding: 1em;
     }
-
 </style>

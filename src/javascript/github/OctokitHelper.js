@@ -38,8 +38,8 @@ OctokitHelper.prototype.getUserRepos = function (gitHubLogin, username, callback
  * Gets the file structure of a repository (async), transforms the flat structure into a
  * tree structures and returns the results through a passed callback
  */
-OctokitHelper.prototype.getRepoTree = function (callback) {
-    getTree(this.octokit, 'u03-birdingapp-ws-2017-18-AliciaFr', function (tree) {
+OctokitHelper.prototype.getRepoTree = function (repoName, callback) {
+    getTree(this.octokit, repoName, function (tree) {
         let structuredTree = buildStructuredTree(tree);
         callback(structuredTree);
     });
@@ -112,7 +112,6 @@ function decodeBlob(blob) {
 
 OctokitHelper.prototype.createBranch = function (repo, reviewer, repoSha, editedFiles) {
     let ref = 'refs/heads/ur-review-' + reviewer;
-    console.log(ref);
     this.octokit.git.createRef({
         owner: organization,
         repo: repo,
@@ -142,7 +141,7 @@ function createCommit(fileContent, repo, filePath, fileSha, reviewer) {
                 message: "Review Uni Regensburg",
                 content: encodeBlob(fileContent),
                 sha: fileSha,
-                branch: 'refs/heads/ur-review-' + reviewer,
+                branch: 'refs/heads/uni-regensburg-review-' + reviewer,
             }).then();
             resolve();
         }, 3000);
@@ -153,6 +152,7 @@ function encodeBlob(file) {
     return Base64.encode(file);
 }
 
+/* checks if the deadline of a repo is already over. If it is over the repo can be submitted. */
 OctokitHelper.prototype.isSubmitted = function (repo, callback) {
     getDeadline(repo, function (deadline) {
         let isSubmitted = isLater(deadline);
@@ -179,5 +179,27 @@ function isLater(deadline) {
         return false;
     }
 }
+
+/* gets the task description of a repo */
+OctokitHelper.prototype.getProjectTask = function (repo, callback) {
+    octokit.repos.getContents({
+        owner: organization,
+        repo: repo,
+        path: 'task.txt'
+    }).then(result => {
+        let task = Base64.decode(result.data.content);
+        callback(task);
+    });
+};
+
+OctokitHelper.prototype.getMasterBranchSha = function (repo, callback) {
+    octokit.repos.getBranch({
+        owner: organization,
+        repo: repo,
+        branch: 'master'
+    }).then(result => {
+       callback(result.data.commit.sha);
+    });
+};
 
 export default OctokitHelper;

@@ -39,7 +39,6 @@ UserRepositoriesFetcherTask.prototype.checkReposForUser = function(repos, that) 
 
         // Stores all Promises (for each repo) in one array
         resultPromises.push(that.getContributorsFromRepo(repos[i].name));
-        console.log(that.getContributorsFromRepo(repos[i].name));
     }
     // Syncs the following action by providing a callback (here filterReposForUserContribution)
     // to be called when ALL Promises have been resolved

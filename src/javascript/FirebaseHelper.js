@@ -3,6 +3,9 @@
  */
 
 import firebase from 'firebase';
+import ReviewStatusFetcherTask from './database/ReviewStatusFetcherTask';
+
+let that;
 
 function FirebaseHelper() {
 }
@@ -74,60 +77,33 @@ FirebaseHelper.prototype.getRepoStatus = function (repoId, callback) {
     });
 };
 
-FirebaseHelper.prototype.getRepoId = function (repoName, callback) {
+FirebaseHelper.prototype.getRepoId = function (repoName, repoOwner) {
     let dbRef = firebase.database();
     let repoEntries = dbRef.ref('repositories');
-    repoEntries.on('value', snap => {
-        snap.forEach(function (child) {
-            if (repoName === child.val().name) {
-                callback(child.key);
-            }
+    let myPromise = new Promise(function (resolve, reject) {
+        repoEntries.on('value', snap => {
+            snap.forEach(function (child) {
+                if (repoName === child.val().name && repoOwner === child.val().owner) {
+                    resolve(child.key);
+                }
+            });
         });
     });
-};
-
-FirebaseHelper.prototype.getCompletedReviews = function (uid) {
-    let dbRef = firebase.database();
-    let reviewEntries = dbRef.ref('reviews');
-    reviewEntries.on('value', snap => {
-        let repos = [];
-        snap.forEach(function (child) {
-           if (uid === child.val().reviewer) {
-               if (child.val().status === 'completed') {
-                   getRepoAuthor(child.val().repo, function (author) {
-                       let repo = {
-                           name: child.val().name,
-                           userName: author
-                       };
-                       repos.push(repo);
-                   });
-               }
-           }
-        });
-    })
+    return myPromise;
 };
 
 FirebaseHelper.prototype.getAssignedReviews = function (uid, callback) {
-    let dbRef = firebase.database();
-    let reviewEntries = dbRef.ref('reviews');
-    reviewEntries.on('value', snap => {
-        let repos = [];
-        snap.forEach(function (child) {
-            if (uid === child.val().reviewer) {
-                if (child.val().status === 'assigned') {
-                    let username = '';
-                    let repo = {
-                        name: child.val().repo,
-                        userName: ''
-                    };
-                    console.log(repo);
-                    repos.push(repo);
-                }
-            }
-            callback(repos);
-        });
+    let task = new ReviewStatusFetcherTask(uid, 'assigned', function (reviews) {
+        callback(reviews);
+    });
+    task.run();
+};
 
-    })
+FirebaseHelper.prototype.getCompletedReviews = function (uid, callback) {
+    let task = new ReviewStatusFetcherTask(uid, 'completed', function (reviews) {
+        callback(reviews);
+    });
+    task.run();
 };
 
 function getRepoAuthor(repoId, callback) {
@@ -142,15 +118,15 @@ function getRepoAuthor(repoId, callback) {
     });
 }
 
-FirebaseHelper.prototype.getProfilePicture = function(uid, callback) {
+FirebaseHelper.prototype.getProfilePicture = function (uid, callback) {
     let dbRef = firebase.database();
     let userEntries = dbRef.ref('users');
     userEntries.on('value', snap => {
-       snap.forEach(function (child) {
-           if (uid === child.key) {
-               callback(child.val().profile_picture);
-           }
-       })
+        snap.forEach(function (child) {
+            if (uid === child.key) {
+                callback(child.val().profile_picture);
+            }
+        })
     });
 };
 
@@ -162,6 +138,22 @@ FirebaseHelper.prototype.getUserName = function (uid) {
             snap.forEach(function (child) {
                 if (uid === child.key) {
                     resolve(child.val().username);
+                }
+            })
+        });
+    });
+    return myPromise;
+};
+
+FirebaseHelper.prototype.getUid = function (username) {
+    let dbRef = firebase.database();
+    let userEntries = dbRef.ref('users');
+    let myPromise = new Promise(function (resolve, reject) {
+        userEntries.on('value', snap => {
+            snap.forEach(function (child) {
+                if (username === child.val().username) {
+
+                    resolve(child.key);
                 }
             })
         });
@@ -197,7 +189,7 @@ FirebaseHelper.prototype.setRepo = function (repoName, uid, testingErrors, exten
     });
 };
 
-FirebaseHelper.prototype.setReview = function (repoName, reviewerUid) {
+FirebaseHelper.prototype.setReview = function (repoName, reviewerUid, commitSha) {
     let dbRef = firebase.database();
     let reviewEntries = dbRef.ref('reviews');
     reviewEntries.push({
@@ -208,7 +200,100 @@ FirebaseHelper.prototype.setReview = function (repoName, reviewerUid) {
         assignDate: '',
         reviewDate: '',
         status: 'assigned',
-        commit_sha: ''
+        commit_sha: commitSha
+    });
+};
+
+FirebaseHelper.prototype.setReviewBranchSha = function (repoName, repoOwnerId, reviewerUid, commitSha) {
+    let dbRef = firebase.database();
+    let reviewEntries = dbRef.ref('reviews');
+    let getRepoId = this.getRepoId(repoName, repoOwnerId);
+    getRepoId.then(function (repoId) {
+
+        reviewEntries.on('value', snap => {
+            snap.forEach(function (child) {
+                if (repoId === child.val().repo && reviewerUid === child.val().reviewer) {
+                    if (child.val().commit_sha === '') {
+                        reviewEntries.child(child.key).update({
+                            "commit_sha": commitSha
+                        });
+                    }
+                }
+            });
+        });
+    });
+};
+
+FirebaseHelper.prototype.getReviewBranchSha = function (repoName, repoOwner, reviewerUid, callback) {
+    let self = this;
+    let dbRef = firebase.database();
+    let reviewEntries = dbRef.ref('reviews');
+    this.getUid(repoOwner).then(function (repoOwnerId) {
+        self.getRepoId(repoName, repoOwnerId).then(function (repoId) {
+            reviewEntries.on('value', snap => {
+                snap.forEach(function (child) {
+                    if (repoId === child.val().repo && reviewerUid === child.val().reviewer) {
+                        callback(child.val().commit_sha);
+                    }
+                });
+            });
+        });
+    });
+};
+
+FirebaseHelper.prototype.setReviewStatus = function (repoName, repoOwner, status) {
+    let self = this;
+    let getUid = this.getUid(repoOwner);
+    getUid.then(function (repoOwnerId) {
+        let getRepoId = self.getRepoId(repoName, repoOwnerId);
+        getRepoId.then(function (repoId) {
+            console.log(repoId);
+            getReviewByRepoId(repoId, status);
+        });
+    });
+};
+
+function getReviewByRepoId(repoId, status) {
+    let dbRef = firebase.database();
+    let reviewEntries = dbRef.ref('reviews');
+    reviewEntries.on('value', snap => {
+        snap.forEach(function (child) {
+            if (repoId === child.val().repo) {
+                reviewEntries.child(child.key).update({
+                   'status': status
+                });
+            }
+        });
+    });
+}
+
+FirebaseHelper.prototype.getExtensions = function (repoName, repoOwner, callback) {
+    let dbRef = firebase.database();
+    let repoEntries = dbRef.ref('repositories');
+    let userId = this.getUid(repoOwner);
+    userId.then(function (uid) {
+        repoEntries.on('value', snap => {
+            snap.forEach(function (child) {
+                if (repoName === child.val().name && uid === child.val().owner) {
+                    callback(child.val().extensions);
+                }
+            })
+        });
+    });
+};
+
+FirebaseHelper.prototype.getTestingErrors = function (repoName, repoOwner, callback) {
+    let dbRef = firebase.database();
+    let repoEntries = dbRef.ref('repositories');
+    let userId = this.getUid(repoOwner);
+    userId.then(function (uid) {
+        repoEntries.on('value', snap => {
+            snap.forEach(function (child) {
+                if (repoName === child.val().name && uid === child.val().owner) {
+                    callback(child.val().testing_errors);
+                }
+            })
+        });
     });
 };
 
