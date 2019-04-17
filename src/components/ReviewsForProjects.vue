@@ -67,7 +67,8 @@
             },
             viewReview (review) {
                 let self = this;
-                myOctokitHelper.getReviewBranchSha(review.repo, review.reviewerName, function (branchSha) {
+                let reviewer = review.reviewerName.replace(/\s/g, '-');
+                myOctokitHelper.getReviewBranchSha(review.repo, reviewer, function (branchSha) {
                     self.setRouteParams(review, branchSha);
                 });
 

@@ -10,7 +10,7 @@ import UserRepositoriesFetcherTask from './UseRepositoriesFetcherTask';
 
 const ORGANIZATION = 'uniregensburgreview';
 const COMMIT_BRANCH = 'refs/heads/uni-regensburg-review-';
-const COMMIT_MESSAGE = '';
+const COMMIT_MESSAGE = 'Uni Regensburg Review';
 
 let octokit = new Octokit({auth: 'token ' + '2983d2539996337ea1f69a320d2a60911bdffa76'});
 
