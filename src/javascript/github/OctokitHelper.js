@@ -8,7 +8,9 @@ import Base64 from 'base-64';
 
 import UserRepositoriesFetcherTask from './UseRepositoriesFetcherTask';
 
-const organization = 'uniregensburgreview';
+const ORGANIZATION = 'uniregensburgreview';
+const COMMIT_BRANCH = 'refs/heads/uni-regensburg-review-';
+const COMMIT_MESSAGE = '';
 
 let octokit = new Octokit({auth: 'token ' + '2983d2539996337ea1f69a320d2a60911bdffa76'});
 
@@ -19,11 +21,13 @@ function OctokitHelper() {
 OctokitHelper.prototype.getUserRepos = function (gitHubLogin, username, callback) {
  // Creates task to get all repos from "organization" to which "user" has contributed
  // Last parameter is a callback function, called when task is completed
- let task = new UserRepositoriesFetcherTask(octokit, organization, gitHubLogin, function(repos) {
+ let task = new UserRepositoriesFetcherTask(octokit, ORGANIZATION, gitHubLogin, function(repos) {
      let userRepos = [];
      for (let i = 0; i < repos.length; i++) {
+         let repoName = repos[i];
+         repoName = repoName.replace(gitHubLogin, '').slice(0, -1);
          userRepos.push({
-             name: repos[i],
+             name: repoName,
              userName: username
          });
      }
@@ -38,18 +42,18 @@ OctokitHelper.prototype.getUserRepos = function (gitHubLogin, username, callback
  * Gets the file structure of a repository (async), transforms the flat structure into a
  * tree structures and returns the results through a passed callback
  */
-OctokitHelper.prototype.getRepoTree = function (repoName, callback) {
-    getTree(this.octokit, repoName, function (tree) {
+OctokitHelper.prototype.getRepoTree = function (repoName, treeSha, callback) {
+    getTree(this.octokit, repoName, treeSha, function (tree) {
         let structuredTree = buildStructuredTree(tree);
         callback(structuredTree);
     });
 };
 
-function getTree(octokit, repo, callback) {
+function getTree(octokit, repo, treeSha, callback) {
     octokit.git.getTree({
-        owner: organization,
+        owner: ORGANIZATION,
         repo: repo,
-        tree_sha: "master",
+        tree_sha: treeSha,
         recursive: 1
     }).then(result => {
         callback(result.data.tree);
@@ -98,7 +102,7 @@ OctokitHelper.prototype.getFile = function (repo, sha, callback) {
 
 function getBlob(octokit, repo, sha, callback) {
     octokit.git.getBlob({
-        owner: organization,
+        owner: ORGANIZATION,
         repo: repo,
         file_sha: sha
     }).then(result => {
@@ -111,9 +115,9 @@ function decodeBlob(blob) {
 }
 
 OctokitHelper.prototype.createBranch = function (repo, reviewer, repoSha, editedFiles) {
-    let ref = 'refs/heads/ur-review-' + reviewer;
+    let ref = COMMIT_BRANCH + reviewer;
     this.octokit.git.createRef({
-        owner: organization,
+        owner: ORGANIZATION,
         repo: repo,
         ref: ref,
         sha: repoSha
@@ -135,13 +139,13 @@ function createCommit(fileContent, repo, filePath, fileSha, reviewer) {
     return new Promise((resolve) => {
         setTimeout(() => {
             octokit.repos.updateFile({
-                owner: organization,
+                owner: ORGANIZATION,
                 repo: repo,
                 path: filePath,
-                message: "Review Uni Regensburg",
+                message: COMMIT_MESSAGE,
                 content: encodeBlob(fileContent),
                 sha: fileSha,
-                branch: 'refs/heads/uni-regensburg-review-' + reviewer,
+                branch: COMMIT_BRANCH + reviewer,
             }).then();
             resolve();
         }, 3000);
@@ -162,7 +166,7 @@ OctokitHelper.prototype.isSubmitted = function (repo, callback) {
 
 function getDeadline(repo, callback) {
     octokit.repos.getContents({
-        owner: organization,
+        owner: ORGANIZATION,
         repo: repo,
         path: 'deadline.json'
     }).then(result => {
@@ -183,7 +187,7 @@ function isLater(deadline) {
 /* gets the task description of a repo */
 OctokitHelper.prototype.getProjectTask = function (repo, callback) {
     octokit.repos.getContents({
-        owner: organization,
+        owner: ORGANIZATION,
         repo: repo,
         path: 'task.txt'
     }).then(result => {
@@ -194,12 +198,25 @@ OctokitHelper.prototype.getProjectTask = function (repo, callback) {
 
 OctokitHelper.prototype.getMasterBranchSha = function (repo, callback) {
     octokit.repos.getBranch({
-        owner: organization,
+        owner: ORGANIZATION,
         repo: repo,
         branch: 'master'
     }).then(result => {
        callback(result.data.commit.sha);
     });
 };
+
+OctokitHelper.prototype.getReviewBranchSha = function (repo, reviewerName, callback) {
+    octokit.repos.getBranch({
+        owner: ORGANIZATION,
+        repo: repo,
+        branch: COMMIT_BRANCH + reviewerName
+    }).then(result => {
+        callback(result.data.commit.sha);
+    });
+};
+
+/* compares the commit of the master branch with the commit of the review branch */
+
 
 export default OctokitHelper;

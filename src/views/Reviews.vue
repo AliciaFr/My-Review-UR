@@ -1,7 +1,5 @@
 <template>
-    <div class="list-messages">
-        <nav-bar></nav-bar>
-
+    <div class="reviews">
         <sui-grid :columns="16" stackable textAlign="left">
             <sui-grid-row>
                 <sui-grid-column :width="3"></sui-grid-column>
@@ -38,20 +36,17 @@
 </template>
 
 <script>
-    import navBar from './NavBar.vue';
-    import navMenu from './RatingsAndReviewsNav.vue';
-    import ratings from './Ratings.vue';
-    import reviews from './Reviews.vue';
-    import NavBar from "./NavBar";
+    import reviewsForReviewer from '../components/ReviewsForReviewer.vue';
+    import reviewsForProjects from '../components/ReviewsForProjects.vue';
 
     let tabs = [
         {
-            title: 'Erhaltene Reviews',
-            component: reviews
+            title: 'Bewertungen für deine Projekte',
+            component: reviewsForProjects
         },
         {
-            title: 'Vergebene Reviews',
-            component: ratings
+            title: 'Bewertungen für deine Reviews',
+            component: reviewsForReviewer
         }];
 
     export default {
@@ -62,16 +57,16 @@
             }
         },
         components: {
-            NavBar,
-            'nav-bar': navBar,
-            'nav-menu': navMenu,
-            'ratings': ratings,
-            'reviews': reviews
+            "reviewsForReviewer": reviewsForReviewer,
+            'reviewsForProjects': reviewsForProjects
         }
     }
 </script>
 
 <style>
+    .reviews {
+        padding-top: 5em;
+    }
     .list-messages {
         padding-bottom: 15em;
     }

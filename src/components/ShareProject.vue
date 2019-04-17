@@ -64,15 +64,24 @@
         },
         methods: {
             assignRepo: function () {
-                return this.$route.params.uid;
+                let self = this;
+                let uid = this.$route.params.uid;
+                firebaseHelper.getRepoId(self.repoTitle, uid).then(function (repoId) {
+                    firebaseHelper.getRepoForAssigning(uid, self.repoTitle, function (repo) {
+                        firebaseHelper.setReview(repoId, repo.author, self.getTodaysDate());
+                    });
+                });
             },
             publishRepo: function () {
                 firebaseHelper.setRepo(this.repoTitle, this.$route.params.uid, this.testingErrors, this.extensions);
-                firebaseHelper.setReview(this.repoTitle, this.assignRepo());
+                this.assignRepo();
                 this.$router.replace('home');
             },
             cancel: function () {
                 this.$router.replace('home');
+            },
+            getTodaysDate: function() {
+                return new Date().toLocaleDateString();
             }
         }
     }

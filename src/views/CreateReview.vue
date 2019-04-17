@@ -11,7 +11,7 @@
                 </sui-grid-column>
                 <sui-grid-column :width="2"></sui-grid-column>
             </sui-grid-row>
-                <sui-grid-row stretched>
+            <sui-grid-row stretched>
                 <sui-grid-column :width="2"></sui-grid-column>
                 <sui-grid-column :width="12">
                     <div class="create-review-nav">
@@ -28,16 +28,22 @@
                     <keep-alive>
                         <component v-bind:is="currentTab.component"
                                    class="tab"
-                        :repoName="repoTitle"
-                        :repoAuthor="repoAuthor">
+                                   :prevRoute="prevRoute"
+                                   :branchSha="branchSha"
+                                   :repoName="repoTitle"
+                                   :repoAuthor="repoAuthor"
+                                   :reviewer="reviewer"
+                        :reviewId="reviewId">
 
                         </component>
                     </keep-alive>
                     <div class="create-review-buttons">
-                        <sui-button @click.native="toggle" icon="cancel" label-position="left" floated="left"
-                                    color="black">{{ backButton }}</sui-button>
-                        <sui-button icon="right arrow" label-position="right" floated="right" @click="handleForwardButton(forwardButton)">{{ forwardButton }}</sui-button>
-                        <sui-modal v-model="open" animation="fly up" :closable="false">
+                        <sui-button @click.native="toggleCancel()" icon="cancel" label-position="left" floated="left">{{ backButton }}
+                        </sui-button>
+                        <sui-button :class="{ hidden: lastTab }" icon="right arrow" label-position="right" floated="right" color="black"
+                                    @click="handleForwardButton(forwardButton)">{{ forwardButton }}
+                        </sui-button>
+                        <sui-modal v-model="openCancel" animation="fly up" :closable="false">
                             <sui-modal-header>Achtung</sui-modal-header>
                             <sui-modal-content>
                                 <sui-modal-description>
@@ -81,6 +87,7 @@
 <script>
     import createReviewOverview from '../components/CreateReviewOverview.vue';
     import createReviewEditor from '../components/CreateReviewEdit.vue';
+    import reviewRating from '../components/ReviewRating.vue';
     import {EventBus} from '../main';
     import OctokitHelper from '../javascript/github/OctokitHelper';
     import LocalStorageHelper from '../javascript/LocalStorageHelper';
@@ -88,12 +95,12 @@
 
     let tabs = [
         {
-            title: 'Overview',
+            title: 'Übersicht',
             component: createReviewOverview,
             id: 1
         },
         {
-            title: 'Editor',
+            title: 'Code Editor',
             component: createReviewEditor,
             id: 2
         }];
@@ -107,36 +114,53 @@
             return {
                 tabs: tabs,
                 currentTab: tabs[0],
-                open: false,
+                openCancel: false,
                 openWarning: false,
+                branchSha: '',
                 repoTitle: '',
                 repoAuthor: '',
                 prevRoute: '',
                 forwardButton: 'Weiter zum Code',
                 backButton: '',
+                commitSha: '',
+                reviewId: '',
                 reviewer: '',
-                commitSha: ''
+                lastTab: false
             };
-        },
-        mounted() {
         },
         created() {
             this.repoTitle = this.$route.params.repoTitle;
             this.repoAuthor = this.$route.params.repoAuthor;
             this.prevRoute = this.$route.params.prevRoute;
+            this.branchSha = this.$route.params.branchSha;
             if (this.prevRoute === 'reviews') {
-                tabs.push({
-                    title: 'Bewertung des Reviews',
-                    component: createReviewOverview
-                });
-                this.setBackButtonTitle('Zurück');
+                this.reviewId = this.$route.params.id;
+                this.getReviewer();
+                if (this.tabs[this.tabs.length - 1].title !== 'Bewertung des Reviews') {
+                    this.tabs.push({
+                        title: 'Bewertung des Reviews',
+                        component: reviewRating,
+                        id: 3
+                    });
+                }
+
+                this.setBackButtonTitle('Schließen');
             } else if (this.prevRoute === 'dashboard') {
+                for (let i = 0; i < this.tabs.length; i++) {
+                    if (this.tabs[i].title === 'Bewertung des Reviews') {
+                        this.tabs.pop();
+                    }
+                }
                 this.setBackButtonTitle('Abbrechen');
             }
         },
         methods: {
-            toggle() {
-                this.open = !this.open;
+            toggleCancel() {
+                if (this.prevRoute === 'dashboard') {
+                    this.openCancel = !this.openCancel;
+                } else {
+                    this.goToAllReviews();
+                }
             },
             toggleWarning() {
                 this.openWarning = !this.openWarning
@@ -150,18 +174,17 @@
                 if (editedFiles !== null) {
                     myFirebaseHelper.getReviewBranchSha(repo, repoOwner, reviewer, function (commitSha) {
                         repoOwner = repoOwner.replace(/\s/g, '-');
-                        //octokitHelper.createBranch(repo, repoOwner, commitSha, editedFiles);
+                        octokitHelper.createBranch(repo, repoOwner, commitSha, editedFiles);
                     });
-                    myFirebaseHelper.setReviewStatus(repo, repoOwner, "completed");
+                    myFirebaseHelper.setReviewStatus(repo, repoOwner, "completed", self.getTodaysDate());
                     self.goToHome();
                     localStorageHelper.deleteAllFiles();
-                    // implement: change review status in database
                 } else {
                     this.openWarning = !this.openWarning;
                 }
             },
             goBack() {
-                this.$router.replace('home');
+                this.$router.replace('/home');
             },
             changeTab (tab) {
                 this.currentTab = tab;
@@ -171,9 +194,13 @@
                 if (tab.id === 1) {
                     this.forwardButton = 'Weiter zum Code';
                 } else if (tab.id === 2) {
-                    this.forwardButton = 'Review abschicken';
+                    if (this.prevRoute === 'dashboard') {
+                        this.forwardButton = 'Review abschicken';
+                    } else if (this.prevRoute === 'reviews') {
+                        this.forwardButton = 'Zur Bewertung des Reviews'
+                    }
                 } else if (tab.id === 3) {
-                    console.log(tab);
+                    this.forwardButton = 'Zurück zu Reviews'
                 }
             },
             setBackButtonTitle (buttonTitle) {
@@ -186,15 +213,28 @@
                     } else if (buttonTitle === 'Review abschicken') {
                         this.createReview();
                     }
+                } else if (this.prevRoute === 'reviews') {
+                    if (buttonTitle === 'Weiter zum Code') {
+                        this.changeTab(tabs[1]);
+                    } else if (buttonTitle === 'Zur Bewertung des Reviews') {
+                        this.changeTab(tabs[2]);
+                    } else if (buttonTitle === 'Zurück zu Reviews') {
+                        this.goToAllReviews();
+                    }
                 }
             },
             goToHome () {
-                this.$router.replace('home');
+                this.$router.replace('/home');
+            },
+            goToAllReviews () {
+                this.$router.replace('/reviews');
+            },
+            getReviewer () {
+                this.reviewer = this.$route.params.reviewerName;
+            },
+            getTodaysDate () {
+                return new Date().toLocaleDateString();
             }
-        },
-        components: {
-            'review-overview': createReviewOverview,
-            'review-editor': createReviewEditor
         }
     }
 
@@ -207,6 +247,6 @@
     }
 
     .create-review-buttons {
-        padding: 1em;
+        padding-top: 1em;
     }
 </style>

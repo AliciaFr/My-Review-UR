@@ -7,7 +7,7 @@ import Login from './views/Login.vue';
 import Messages from './views/Messages.vue';
 import CreateReview from './views/CreateReview.vue';
 import ShareProject from './components/ShareProject.vue';
-import Reviews from './components/RatingsAndReviews.vue';
+import Reviews from './views/Reviews.vue';
 
 Vue.use(Router);
 
@@ -70,6 +70,16 @@ const router = new Router({
             meta: {
                 requiresAuth: true
             }
+        },
+        {
+            path: 'reviews/:id',
+            name: 'viewReview',
+            alias: '/reviews/:id',
+            component: CreateReview,
+            meta: {
+                requiresAuth: true
+            },
+            props: true
         }
     ],
     mode: "history"
@@ -83,6 +93,7 @@ router.beforeEach((to, from, next) => {
     else if (!requiresAuth && currentUser) next('home');
     else if (!requiresAuth && currentUser) next('createReview');
     else if (!requiresAuth && currentUser) next('messages');
+    else if (!requiresAuth && currentUser) next('viewReview');
     else next();
 });
 

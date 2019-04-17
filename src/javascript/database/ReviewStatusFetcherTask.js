@@ -25,7 +25,13 @@ ReviewStatusFetcherTask.prototype.filterReviewsForStatus = function (uid, status
             if (uid === child.val().reviewer) {
                 if (child.val().status === status) {
                     let repo = child.val().repo;
-                    repos.push(repo);
+                    repos.push({
+                        repoId: repo,
+                        rating: child.val().rating,
+                        helpful: child.val().helpful,
+                        reviewer: child.val().reviewer,
+                        reviewDate: child.val().reviewDate
+                    });
                 }
             }
         });
@@ -38,14 +44,14 @@ ReviewStatusFetcherTask.prototype.checkReposForName = function (repos) {
     for (let i = 0; i < repos.length; i++) {
         resultPromises.push(this.getRepoName(repos[i]));
     }
-    Promise.all(resultPromises).then(that.findUsernameForRepo);
+    Promise.all(resultPromises).then(that.findUsernameForRepoAuthor);
 };
 
-ReviewStatusFetcherTask.prototype.findUsernameForRepo = function (repos) {
+ReviewStatusFetcherTask.prototype.findUsernameForRepoAuthor = function (repos) {
     let resultPromises = [];
     let resultReviews = [];
     for (let i = 0; i < repos.length; i++) {
-        resultPromises.push(that.getUserName(repos[i].userName));
+        resultPromises.push(that.getUserName(repos[i].author));
     }
     Promise.all(resultPromises).then(function (users) {
         for (let i = 0; i < repos.length; i++) {
@@ -53,19 +59,24 @@ ReviewStatusFetcherTask.prototype.findUsernameForRepo = function (repos) {
             resultReviews.push(repos[i]);
         }
         that.callback(resultReviews);
+        console.log(resultReviews);
     });
 };
 
-ReviewStatusFetcherTask.prototype.getRepoName = function (repoId) {
+ReviewStatusFetcherTask.prototype.getRepoName = function (repo) {
     let dbRef = firebase.database();
     let reviewEntries = dbRef.ref('repositories');
     let myPromise = new Promise(function (resolve, reject) {
         reviewEntries.on('value', snap => {
-            snap.forEach(function (child) {
-                if (repoId === child.key) {
+            snap.forEach(function (child) {;
+                if (repo.repoId === child.key) {
                     resolve({
                         name: child.val().name,
-                        userName: child.val().owner
+                        author: child.val().owner,
+                        rating: repo.rating,
+                        helpful: repo.helpful,
+                        reviewer: repo.reviewer,
+                        reviewDate: repo.reviewDate
                     });
                 }
             });

@@ -4,6 +4,8 @@
 
 import firebase from 'firebase';
 import ReviewStatusFetcherTask from './database/ReviewStatusFetcherTask';
+import AssignRepoFetcherTask from './database/AssignRepoFetcherTask';
+import ReviewsForUserFetcherTask from './database/ReviewsForUserFetcherTask';
 
 let that;
 
@@ -92,6 +94,16 @@ FirebaseHelper.prototype.getRepoId = function (repoName, repoOwner) {
     return myPromise;
 };
 
+FirebaseHelper.prototype.getReviewsForUser = function (uid) {
+    let myPromise = new Promise(function (resolve, reject) {
+        let task = new ReviewsForUserFetcherTask(uid, function (reviews) {
+            resolve(reviews);
+        });
+        task.run();
+    });
+    return myPromise;
+};
+
 FirebaseHelper.prototype.getAssignedReviews = function (uid, callback) {
     let task = new ReviewStatusFetcherTask(uid, 'assigned', function (reviews) {
         callback(reviews);
@@ -99,24 +111,30 @@ FirebaseHelper.prototype.getAssignedReviews = function (uid, callback) {
     task.run();
 };
 
-FirebaseHelper.prototype.getCompletedReviews = function (uid, callback) {
+FirebaseHelper.prototype.getReviewsForReviewer = function (uid, callback) {
+    let task = new ReviewStatusFetcherTask(uid, 'completed', function (reviews) {
+        let filteredReviews = [];
+        for (let i = 0; i < reviews.length; i++) {
+            if (reviews[i].rating !== '') {
+                filteredReviews.push(reviews[i]);
+            }
+        }
+        callback(filteredReviews);
+    });
+    task.run();
+};
+
+/* Gets all Reviews with the status "completed" in which the current user is the reviewer of the assigned repository */
+FirebaseHelper.prototype.getCompletedReviewsFromUser = function (uid, callback) {
     let task = new ReviewStatusFetcherTask(uid, 'completed', function (reviews) {
         callback(reviews);
     });
     task.run();
 };
 
-function getRepoAuthor(repoId, callback) {
-    let dbRef = firebase.database();
-    let repoEntries = dbRef.ref('repositories');
-    repoEntries.on('value', snap => {
-        snap.forEach(function (child) {
-            if (repoId === child.key) {
-                callback(child.val().user);
-            }
-        });
-    });
-}
+
+/* Gets all Reviews with the status "completed" in which the current user is the author of the published repository */
+
 
 FirebaseHelper.prototype.getProfilePicture = function (uid, callback) {
     let dbRef = firebase.database();
@@ -183,13 +201,29 @@ FirebaseHelper.prototype.setRepo = function (repoName, uid, testingErrors, exten
     repoEntries.push({
         name: repoName,
         owner: uid,
-        releaseDate: new Date(),
+        publishing_date: Date.now(),
         testing_errors: testingErrors,
         extensions: extensions
     });
 };
 
-FirebaseHelper.prototype.setReview = function (repoName, reviewerUid, commitSha) {
+FirebaseHelper.prototype.getRepoForAssigning = function (uid, repoName, callback) {
+    let task = new AssignRepoFetcherTask(uid, repoName, function (repos) {
+        console.log(repos);
+        let currPublishingDate = repos[0].publishingDate;
+        let currRepo = repos[0];
+        for (let i = 0; i < repos.length; i++) {
+            if (repos[i].publishingDate < currPublishingDate) {
+                currPublishingDate = repos[i].publishingDate;
+                currRepo = repos[i];
+            }
+        }
+        callback(currRepo);
+    });
+    task.run();
+};
+
+FirebaseHelper.prototype.setReview = function (repoName, reviewerUid, assignDate) {
     let dbRef = firebase.database();
     let reviewEntries = dbRef.ref('reviews');
     reviewEntries.push({
@@ -197,10 +231,9 @@ FirebaseHelper.prototype.setReview = function (repoName, reviewerUid, commitSha)
         reviewer: reviewerUid,
         helpful: '',
         rating: '',
-        assignDate: '',
+        assignDate: assignDate,
         reviewDate: '',
-        status: 'assigned',
-        commit_sha: commitSha
+        status: 'assigned'
     });
 };
 
@@ -209,15 +242,13 @@ FirebaseHelper.prototype.setReviewBranchSha = function (repoName, repoOwnerId, r
     let reviewEntries = dbRef.ref('reviews');
     let getRepoId = this.getRepoId(repoName, repoOwnerId);
     getRepoId.then(function (repoId) {
-
         reviewEntries.on('value', snap => {
             snap.forEach(function (child) {
                 if (repoId === child.val().repo && reviewerUid === child.val().reviewer) {
-                    if (child.val().commit_sha === '') {
                         reviewEntries.child(child.key).update({
                             "commit_sha": commitSha
                         });
-                    }
+
                 }
             });
         });
@@ -241,31 +272,65 @@ FirebaseHelper.prototype.getReviewBranchSha = function (repoName, repoOwner, rev
     });
 };
 
-FirebaseHelper.prototype.setReviewStatus = function (repoName, repoOwner, status) {
+FirebaseHelper.prototype.setReviewStatus = function (repoName, repoOwner, status, date) {
     let self = this;
     let getUid = this.getUid(repoOwner);
     getUid.then(function (repoOwnerId) {
         let getRepoId = self.getRepoId(repoName, repoOwnerId);
         getRepoId.then(function (repoId) {
-            console.log(repoId);
-            getReviewByRepoId(repoId, status);
+            getReviewByRepoId(repoId, status, date);
         });
     });
 };
 
-function getReviewByRepoId(repoId, status) {
+function getReviewByRepoId(repoId, status, date) {
     let dbRef = firebase.database();
     let reviewEntries = dbRef.ref('reviews');
     reviewEntries.on('value', snap => {
         snap.forEach(function (child) {
             if (repoId === child.val().repo) {
                 reviewEntries.child(child.key).update({
-                   'status': status
+                   'status': status,
+                    'reviewDate': date
                 });
             }
         });
     });
 }
+
+FirebaseHelper.prototype.getReviewForReviewer = function (reviewId) {
+    let dbRef = firebase.database();
+    let reviewEntries = dbRef.ref('reviews');
+    let myPromise = new Promise(function (resolve, reject) {
+        reviewEntries.on('value', snap => {
+            snap.forEach(function (child) {
+                if (child.key === reviewId) {
+                    resolve({
+                        helpful: child.val().helpful,
+                        rating: child.val().rating
+                    });
+                }
+            });
+        });
+    });
+    console.log(myPromise);
+    return myPromise;
+};
+
+FirebaseHelper.prototype.setReviewForReviewer = function (reviewId, helpful, rating) {
+    let dbRef = firebase.database();
+    let reviewEntries = dbRef.ref('reviews');
+    reviewEntries.on('value', snap => {
+        snap.forEach(function (child) {
+            if (child.key === reviewId) {
+                reviewEntries.child(child.key).update({
+                    helpful: helpful,
+                    rating: rating
+                });
+            }
+        });
+    });
+};
 
 FirebaseHelper.prototype.getExtensions = function (repoName, repoOwner, callback) {
     let dbRef = firebase.database();

@@ -134,7 +134,6 @@
                     case 'not published':
                         this.setButton('Freigeben', 'add');
                             this.setRepos(myRepoFetcherTask.unpublishedRepos);
-
                         break;
                     case 'published':
                         this.setButton('Status', 'eye');
@@ -147,7 +146,7 @@
                         this.setButton('Review erstellen', 'add');
                         break;
                     case 'reviewed':
-                        firebaseHelper.getCompletedReviews(self.uid, function (reviews) {
+                        firebaseHelper.getCompletedReviewsFromUser(self.uid, function (reviews) {
                             self.repos = reviews;
                         });
                         this.setButton('Review ansehen', 'eye');
@@ -171,16 +170,18 @@
                         break;
                     case 'Review erstellen':
                         firebaseHelper.getUid(this.currUserName).then(function (uid) {
+                            console.log(uid);
                             octokitHelper.getMasterBranchSha(self.currRepoName, function (sha) {
                                 firebaseHelper.setReviewBranchSha(self.currRepoName, uid, myLocalStorageHelper.getUserId(), sha);
+                                self.$router.replace({
+                                    name: 'createReview', params: {
+                                        repoTitle: self.currRepoName,
+                                        repoAuthor: self.currUserName,
+                                        prevRoute: 'dashboard',
+                                        branchSha: sha
+                                    }
+                                });
                             });
-                        });
-                        this.$router.replace({
-                            name: 'createReview', params: {
-                                repoTitle: this.currRepoName,
-                                repoAuthor: this.currUserName,
-                                prevRoute: 'dashboard'
-                            }
                         });
                         break;
                     case 'Review ansehen':
@@ -209,7 +210,7 @@
             onStatusAvailable(status) {
             },
             publishRepo(repo) {
-                self = this;
+                let self = this;
                 octokitHelper.isSubmitted(repo, function (isSubmitted) {
                     if (isSubmitted) {
                         self.$router.replace({

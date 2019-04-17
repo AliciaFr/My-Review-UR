@@ -35,21 +35,27 @@ RepositoryFetcherTask.prototype.onGitHubLoginAvailable = function (gitHubLogin) 
 
 RepositoryFetcherTask.prototype.onGitHubReposAvailable = function (repos) {
     that.currentGitHubRepos = repos;
+    _.uniq(that.currentGitHubRepos);
     that.mergeRepositories();
 };
 
 RepositoryFetcherTask.prototype.mergeRepositories = function () {
     let result = [];
-    this.unpublishedRepos = [];
-    result = _.difference(this.currentFirebaseRepos, this.currentGitHubRepos);
-    for (let i = 0; i < this.currentGitHubRepos.length; i++) {
-        for (let j = 0; j < result.length; j++) {
-            if (this.currentGitHubRepos[i].name !== result[j].name) {
-                this.unpublishedRepos.push(this.currentGitHubRepos[i]);
-            }
+    that.unpublishedRepos = [];
+    if (that.currentFirebaseRepos.length === 0) {
+        that.unpublishedRepos = that.currentGitHubRepos;
+    } else {
+        let pluckGitHubRepos = _.pluck(that.currentGitHubRepos, 'name');
+        let pluckFirebaseRepos = _.pluck(that.currentFirebaseRepos, 'name');
+        result = _.difference(pluckGitHubRepos, pluckFirebaseRepos);
+        for (let i = 0; i < result.length; i++) {
+            this.unpublishedRepos.push({
+                name: result[i],
+                userName: that.username
+            })
         }
     }
-    that.callback(this.unpublishedRepos);
+    that.callback(that.unpublishedRepos);
 };
 
 export default RepositoryFetcherTask;

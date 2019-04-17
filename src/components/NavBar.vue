@@ -14,7 +14,7 @@
                         :active="isActive(item)"
                         :key="item"
                         :content="item"
-                        @click="select(item); toMessages()">
+                        @click="select(item)">
                 </a>
                 <sui-dropdown item
                               :active="isActive('Account')"
@@ -36,8 +36,10 @@
     import firebase from 'firebase';
     import 'semantic-ui-css/semantic.min.css';
     import listMessages from '../components/ListMessages.vue';
+    import LocalStorageHelper from '../javascript/LocalStorageHelper';
     import FirebaseHelper from '../javascript/FirebaseHelper';
 
+    let myLocalStorageHelper = new LocalStorageHelper();
     let myFirebaseHelper = new FirebaseHelper();
 
     export default {
@@ -49,10 +51,7 @@
             };
         },
         mounted: function () {
-            let self = this;
-            myFirebaseHelper.getProfilePicture('dUTeGpNEk0gHhavOYUgoWxYVkUr2', function (profilePicture) {
-                self.profilePicture = profilePicture;
-            });
+            this.setProfilePicture();
         },
         methods: {
             logout: function () {
@@ -60,17 +59,37 @@
                     this.$router.replace('login');
                 })
             },
+            toHome: function () {
+                this.$router.replace('/home');
+            },
+            toReviews: function () {
+                this.$router.replace('/reviews');
+            },
             toMessages: function () {
-                this.$router.push({name: 'messages', component: listMessages});
+                this.$router.replace('/messages');
             },
             isActive(name) {
                 return this.active === name;
             },
             select(name) {
                 this.active = name;
+                switch (name) {
+                    case 'Home':
+                        this.toHome();
+                        break;
+                    case 'Bewertungen':
+                        this.toReviews();
+                        break;
+                    case 'Nachrichten':
+                        this.toMessages();
+                }
             },
-            setProfilePicture: function () {
-
+            setProfilePicture () {
+                let self = this;
+                let uid = myLocalStorageHelper.getUserId();
+                myFirebaseHelper.getProfilePicture(uid, function (profilePicture) {
+                    self.profilePicture = profilePicture;
+                });
             }
         },
     }
