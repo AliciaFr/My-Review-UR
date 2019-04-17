@@ -4,6 +4,14 @@
 
 function LocalStorageHelper () {}
 
+LocalStorageHelper.prototype.addUserId = function (uid) {
+    localStorage.setItem('uid', uid);
+};
+
+LocalStorageHelper.prototype.getUserId = function () {
+    return localStorage.getItem('uid');
+};
+
 LocalStorageHelper.prototype.addEntry = function (name, fileSha, filePath, content) {
     let file = {
         "name": name,

@@ -3,9 +3,11 @@
  */
 import firebase from 'firebase';
 import DatabaseHelper from '../javascript/FirebaseHelper';
+import LocalStorageHelper from '../javascript/LocalStorageHelper';
 import AnimalAvatar from 'animal-avatars.js';
 
 let animalAvatar = new AnimalAvatar();
+let myLocalStorageHelper = new LocalStorageHelper();
 
 export default {
     methods: {
@@ -21,6 +23,7 @@ export default {
                 if (checkUser(dbRef, uid) === false) {
                     databaseHelper.createAccount(dbRef, uid, createUserName(), createProfilePicture(), gitHubLogin);
                 }
+                myLocalStorageHelper.addUserId(uid);
                 this.$router.replace('home');
                 localStorage.setItem('gitHubLogin', gitHubLogin);
             }).catch((err) => {

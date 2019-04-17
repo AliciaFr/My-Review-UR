@@ -5,75 +5,55 @@
 import Octokit from '@octokit/rest';
 import _ from 'underscore';
 import Base64 from 'base-64';
-const organization = 'uniregensburgreview';
 
-let userRepos = [],
-    octokit = new Octokit({auth: 'token ' + '2983d2539996337ea1f69a320d2a60911bdffa76'});
+import UserRepositoriesFetcherTask from './UseRepositoriesFetcherTask';
+
+const ORGANIZATION = 'uniregensburgreview';
+const COMMIT_BRANCH = 'refs/heads/uni-regensburg-review-';
+const COMMIT_MESSAGE = 'Uni Regensburg Review';
+
+let octokit = new Octokit({auth: 'token ' + '2983d2539996337ea1f69a320d2a60911bdffa76'});
 
 function OctokitHelper() {
     this.octokit = octokit;
 }
 
-// gets all repos of the organization uniregensburgreview in which the user is contributor
-OctokitHelper.prototype.getUserRepos = function (gitHubLogin) {
-    getOrgRepos(this.octokit, onOrgReposAvailable, gitHubLogin);
+OctokitHelper.prototype.getUserRepos = function (gitHubLogin, username, callback) {
+ // Creates task to get all repos from "organization" to which "user" has contributed
+ // Last parameter is a callback function, called when task is completed
+ let task = new UserRepositoriesFetcherTask(octokit, ORGANIZATION, gitHubLogin, function(repos) {
+     let userRepos = [];
+     for (let i = 0; i < repos.length; i++) {
+         let repoName = repos[i];
+         repoName = repoName.replace(gitHubLogin, '').slice(0, -1);
+         userRepos.push({
+             name: repoName,
+             userName: username
+         });
+     }
+    callback(userRepos);
+ });
+ task.run();
 };
 
-// 2: Octokit gets the repos of the organization
-function getOrgRepos(octokit, callback, gitHubLogin) {
-    octokit.repos.listForOrg({
-        org: organization
-    }).then(result => {
-        callback(octokit, result.data, gitHubLogin);
-    });
-}
 
-// 3: callback of getORgRepos
-function onOrgReposAvailable(octokit, repos, gitHubLogin) {
-    for (let i = 0; i < repos.length; i++) {
-        listRepoContributors(octokit, repos[i]["name"], gitHubLogin, onContributorsAvailable);
-    }
-}
-
-
-//5: gets the contributors of a repo
-function listRepoContributors(octokit, repo, gitHubLogin, callback) {
-    octokit.repos.listContributors({
-        owner: organization,
-        repo: repo
-    }).then(result => {
-        callback(gitHubLogin, result.data, repo);
-    })
-}
-
-// 6: callback of listRepoContributors
-function onContributorsAvailable(gitHubLogin, contributors, repo) {
-    for (let i = 0; i < contributors.length; i++) {
-        if (contributors[i]["login"] === gitHubLogin) {
-            userRepos.push(repo);
-        }
-        localStorage.setItem("repos", JSON.stringify(userRepos));
-    }
-
-}
 
 /**
  * Gets the file structure of a repository (async), transforms the flat structure into a
  * tree structures and returns the results through a passed callback
  */
-OctokitHelper.prototype.getRepoTree = function (callback) {
-    getTree(this.octokit, 'u03-birdingapp-ws-2017-18-AliciaFr', function (tree) {
+OctokitHelper.prototype.getRepoTree = function (repoName, treeSha, callback) {
+    getTree(this.octokit, repoName, treeSha, function (tree) {
         let structuredTree = buildStructuredTree(tree);
-        console.log(callback);
         callback(structuredTree);
     });
 };
 
-function getTree(octokit, repo, callback) {
+function getTree(octokit, repo, treeSha, callback) {
     octokit.git.getTree({
-        owner: organization,
+        owner: ORGANIZATION,
         repo: repo,
-        tree_sha: "master",
+        tree_sha: treeSha,
         recursive: 1
     }).then(result => {
         callback(result.data.tree);
@@ -122,12 +102,11 @@ OctokitHelper.prototype.getFile = function (repo, sha, callback) {
 
 function getBlob(octokit, repo, sha, callback) {
     octokit.git.getBlob({
-        owner: organization,
+        owner: ORGANIZATION,
         repo: repo,
         file_sha: sha
     }).then(result => {
         callback(result.data.content);
-        console.log(result.data);
     });
 }
 
@@ -136,16 +115,13 @@ function decodeBlob(blob) {
 }
 
 OctokitHelper.prototype.createBranch = function (repo, reviewer, repoSha, editedFiles) {
-    let ref = 'refs/heads/ur-review-' + reviewer;
-    console.log(ref);
+    let ref = COMMIT_BRANCH + reviewer;
     this.octokit.git.createRef({
-        owner: organization,
+        owner: ORGANIZATION,
         repo: repo,
         ref: ref,
         sha: repoSha
     }).then(result => {
-        console.log(result.data);
-
         if (editedFiles !== null) {
             return myFunction(editedFiles, repo, reviewer);
         }
@@ -163,13 +139,13 @@ function createCommit(fileContent, repo, filePath, fileSha, reviewer) {
     return new Promise((resolve) => {
         setTimeout(() => {
             octokit.repos.updateFile({
-                owner: organization,
+                owner: ORGANIZATION,
                 repo: repo,
                 path: filePath,
-                message: "Review Uni Regensburg",
+                message: COMMIT_MESSAGE,
                 content: encodeBlob(fileContent),
                 sha: fileSha,
-                branch: 'refs/heads/ur-review-' + reviewer,
+                branch: COMMIT_BRANCH + reviewer,
             }).then();
             resolve();
         }, 3000);
@@ -179,6 +155,68 @@ function createCommit(fileContent, repo, filePath, fileSha, reviewer) {
 function encodeBlob(file) {
     return Base64.encode(file);
 }
+
+/* checks if the deadline of a repo is already over. If it is over the repo can be submitted. */
+OctokitHelper.prototype.isSubmitted = function (repo, callback) {
+    getDeadline(repo, function (deadline) {
+        let isSubmitted = isLater(deadline);
+        callback(isSubmitted);
+    });
+};
+
+function getDeadline(repo, callback) {
+    octokit.repos.getContents({
+        owner: ORGANIZATION,
+        repo: repo,
+        path: 'deadline.json'
+    }).then(result => {
+        let deadlineFile = JSON.parse(Base64.decode(result.data.content));
+        callback(deadlineFile.deadline);
+    });
+}
+
+function isLater(deadline) {
+    let now = new Date();
+    if (now > new Date(deadline)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+/* gets the task description of a repo */
+OctokitHelper.prototype.getProjectTask = function (repo, callback) {
+    octokit.repos.getContents({
+        owner: ORGANIZATION,
+        repo: repo,
+        path: 'task.txt'
+    }).then(result => {
+        let task = Base64.decode(result.data.content);
+        callback(task);
+    });
+};
+
+OctokitHelper.prototype.getMasterBranchSha = function (repo, callback) {
+    octokit.repos.getBranch({
+        owner: ORGANIZATION,
+        repo: repo,
+        branch: 'master'
+    }).then(result => {
+       callback(result.data.commit.sha);
+    });
+};
+
+OctokitHelper.prototype.getReviewBranchSha = function (repo, reviewerName, callback) {
+    octokit.repos.getBranch({
+        owner: ORGANIZATION,
+        repo: repo,
+        branch: COMMIT_BRANCH + reviewerName
+    }).then(result => {
+        callback(result.data.commit.sha);
+    });
+};
+
+/* compares the commit of the master branch with the commit of the review branch */
 
 
 export default OctokitHelper;

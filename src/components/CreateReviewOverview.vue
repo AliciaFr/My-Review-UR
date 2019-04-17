@@ -3,22 +3,62 @@
         <sui-segment aligned="left">
             <sui-segment vertical padded="very">
                 <div class="ui medium header">Aufgabenstellung</div>
-                <p>Dies ist ein Typoblindtext. An ihm kann man sehen, ob alle Buchstaben da sind und wie sie aussehen. Manchmal benutzt man Worte wie Hamburgefonts, Rafgenduks oder Handgloves, um Schriften zu testen. Manchmal Sätze, die alle Buchstaben des Alphabets enthalten - man nennt diese Sätze »Pangrams«. Sehr bekannt ist dieser: The quick brown fox jumps over the lazy old dog. Oft werden in Typoblindtexte auch fremdsprachige Satzteile eingebaut (AVAIL® and Wefox™ are testing aussi la Kerning), um die Wirkung in anderen Sprachen zu testen. In Lateinisch sieht zum Beispiel fast jede Schrift gut aus. Quod erat demonstrandum. Seit 1975 fehlen in den meisten Testtexten die Zahlen, weswegen nach TypoGb. 204 § ab dem Jahr 2034 Zahlen in 86 der Texte zur Pflicht werden. Nichteinhaltung wird mit bis zu 245 € oder 368 $ bestraft. Genauso wichtig in sind mittlerweile auch Âçcèñtë, die in neueren Schriften aber fast immer enthalten sind. Ein wichtiges aber schwierig zu integrierendes Feld sind OpenType-Funktionalitäten. Je nach Software und Voreinstellungen können eingebaute Kapitälchen, Kerning oder Ligaturen (sehr pfiffig) nicht richtig dargestellt werden.Dies ist ein Typoblindtext. An ihm kann man sehen, ob alle Buchstaben da sind und wie sie aussehen. Manchmal benutzt man Worte wie Hamburgefonts, Rafgenduks</p>
+                <p>{{ taskDescription }}</p>
             </sui-segment>
-            <sui-segment vertical  padded="very">
-                <sui-header size="medium">Aufgabenstellung</sui-header>
-                <p>Es wurden keine Erweiterungen implementiert.</p>
+            <sui-segment vertical padded="very">
+                <sui-header size="medium">Erweiterungen der Aufgabenstellung</sui-header>
+                <p>{{ extensions }}</p>
             </sui-segment>
             <sui-segment vertical padded="very">
                 <sui-header size="medium">Testing-Fehler</sui-header>
-                <p>Es wurden keine Erweiterungen implementiert.</p>
+                <p>{{ testingErrors }}</p>
             </sui-segment>
         </sui-segment>
     </div>
 </template>
 
-
 <script>
+    import FirebaseHelper from '../javascript/FirebaseHelper';
+    import OctokitHelper from '../javascript/github/OctokitHelper';
+
+    let myFirebaseHelper = new FirebaseHelper();
+    let myOctokitHelper = new OctokitHelper();
+
+    export default {
+        props: {
+            repoName: String,
+            repoAuthor: String
+        },
+        data() {
+            return {
+                taskDescription: '',
+                testingErrors: '',
+                noTestingErrors: 'Die Anwendung funktioniert fehlerfrei./Es wurden keine Testing-Fehler gefunden.',
+                extensions: '',
+                noExtensions: 'Es wurden keine Erweiterungen implementiert.'
+            }
+        },
+        mounted() {
+            let self = this;
+            myOctokitHelper.getProjectTask(this.repoName, function (task) {
+                self.taskDescription = task;
+            });
+            myFirebaseHelper.getTestingErrors(this.repoName, this.repoAuthor, function (testingErrors) {
+                if (testingErrors === '') {
+                    self.testingErrors = self.noTestingErrors;
+                } else {
+                    self.testingErrors = testingErrors;
+                }
+            });
+            myFirebaseHelper.getExtensions(this.repoName, this.repoAuthor, function (extensions) {
+                if (extensions === '') {
+                    self.extensions = self.noExtensions;
+                } else {
+                    self.extensions = extensions;
+                }
+            });
+        }
+    }
 </script>
 
 <style>

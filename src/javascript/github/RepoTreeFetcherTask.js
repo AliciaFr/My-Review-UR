@@ -2,13 +2,15 @@
  * Created by Alicia on 25.03.2019.
  */
 
-function RepoTreeFetcherTask(octokitHelper, callback) {
+function RepoTreeFetcherTask(repoName, treeSha, octokitHelper, callback) {
     this.callback = callback;
     this.octokitHelper = octokitHelper;
+    this.repoName = repoName;
+    this.treeSha = treeSha;
 }
 
 RepoTreeFetcherTask.prototype.run = function () {
-    this.octokitHelper.getRepoTree(this.onTreeAvailable.bind(this));
+    this.octokitHelper.getRepoTree(this.repoName, this.treeSha, this.onTreeAvailable.bind(this));
 };
 
 RepoTreeFetcherTask.prototype.onTreeAvailable = function (tree) {

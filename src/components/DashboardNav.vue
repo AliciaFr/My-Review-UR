@@ -1,39 +1,76 @@
 <template>
     <sui-segment>
-        <sui-list link relaxed>
-            <sui-list-item>
-                    <p><sui-list-header>Deine Projekte</sui-list-header></p>
-                    <p><a is="sui-list-item">Noch nicht freigegeben</a></p>
-                    <p><a is="sui-list-item">Von Dir freigegeben</a></p>
-            </sui-list-item>
-            <sui-list-item>
-                <p><sui-list-header>Dir zugewiesene Projekte</sui-list-header></p>
-                <p><a is="sui-list-item">Noch nicht reviewt</a></p>
-                <p><a is="sui-list-item">Von Dir reviewt</a></p>
-            </sui-list-item>
-        </sui-list>
+        <sui-menu vertical text v-for="item in items">
+            <sui-menu-header @click="select()">{{ item.label }}</sui-menu-header>
+            <sui-menu-item v-for="child in item.children" :key="child.label" :active="isActive(child.label)"
+                          @click="select(child)">{{ child.label }}
+            </sui-menu-item>
+        </sui-menu>
     </sui-segment>
 </template>
 
 <script>
     import 'semantic-ui-css/semantic.min.css';
+    import { EventBus } from '../main';
 
     export default {
-        name: 'app',
-
+        data: function () {
+          return {
+              items: [{
+                  label: 'Deine Projekte',
+                  children: [
+                      {
+                          label: 'Noch nicht freigegeben',
+                          category: 'not published'
+                      },
+                      {
+                          label: 'Von Dir freigegeben',
+                          category: 'published'
+                      }
+                  ]
+              }, {
+                  label: 'Dir zugewiesene Projekte',
+                  children: [
+                      {
+                          label: 'Noch nicht reviewt',
+                          category: 'not reviewed'
+                      },
+                      {
+                          label: 'Von Dir reviewt',
+                          category: 'reviewed'
+                      }
+                  ]
+              }
+              ],
+              active: 'Noch nicht freigegeben',
+              category: ''
+          }
+        },
         methods: {
             logout: function () {
                 firebase.auth().signOut().then(() => {
                     this.$router.replace('login');
                 })
-            }
+            },
+            isActive(name) {
+                return this.active === name;
+            },
+            select(item) {
+                this.active = item.label;
+                this.category = item.category;
+                EventBus.$emit('onDashboardItemClick', this.category);
+            },
         }
     }
 </script>
 
 <style>
-    .ui.list .list>.item, .ui.list>.item, ol.ui.list li, ul.ui.list li {
-        text-align: left;
-        margin: 10px;
+    .content {
+        margin-top: 1em;
+        margin-bottom: 1em;
+    }
+
+    .header {
+        font-weight: bold;
     }
 </style>
