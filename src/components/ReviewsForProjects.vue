@@ -91,7 +91,8 @@
                         repoAuthor: '',
                         reviewerName: review.reviewerName,
                         prevRoute: 'reviews',
-                        branchSha: branchSha
+                        branchSha: branchSha,
+                        beforeReviewSha: review.reviewSha
                     }
                 });
             }

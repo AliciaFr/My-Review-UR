@@ -237,7 +237,7 @@ FirebaseHelper.prototype.setReview = function (repoName, reviewerUid, assignDate
     });
 };
 
-FirebaseHelper.prototype.setReviewBranchSha = function (repoName, repoOwnerId, reviewerUid, commitSha) {
+FirebaseHelper.prototype.setReviewBranchSha = function (repoName, repoOwnerId, reviewerUid, reviewSha) {
     let dbRef = firebase.database();
     let reviewEntries = dbRef.ref('reviews');
     let getRepoId = this.getRepoId(repoName, repoOwnerId);
@@ -246,7 +246,7 @@ FirebaseHelper.prototype.setReviewBranchSha = function (repoName, repoOwnerId, r
             snap.forEach(function (child) {
                 if (repoId === child.val().repo && reviewerUid === child.val().reviewer) {
                         reviewEntries.child(child.key).update({
-                            "commit_sha": commitSha
+                            "review_sha": reviewSha
                         });
 
                 }

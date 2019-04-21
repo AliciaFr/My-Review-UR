@@ -19,23 +19,22 @@ function OctokitHelper() {
 }
 
 OctokitHelper.prototype.getUserRepos = function (gitHubLogin, username, callback) {
- // Creates task to get all repos from "organization" to which "user" has contributed
- // Last parameter is a callback function, called when task is completed
- let task = new UserRepositoriesFetcherTask(octokit, ORGANIZATION, gitHubLogin, function(repos) {
-     let userRepos = [];
-     for (let i = 0; i < repos.length; i++) {
-         let repoName = repos[i];
-         repoName = repoName.replace(gitHubLogin, '').slice(0, -1);
-         userRepos.push({
-             name: repoName,
-             userName: username
-         });
-     }
-    callback(userRepos);
- });
- task.run();
+    // Creates task to get all repos from "organization" to which "user" has contributed
+    // Last parameter is a callback function, called when task is completed
+    let task = new UserRepositoriesFetcherTask(octokit, ORGANIZATION, gitHubLogin, function (repos) {
+        let userRepos = [];
+        for (let i = 0; i < repos.length; i++) {
+            let repoName = repos[i];
+            repoName = repoName.replace(gitHubLogin, '').slice(0, -1);
+            userRepos.push({
+                name: repoName,
+                userName: username
+            });
+        }
+        callback(userRepos);
+    });
+    task.run();
 };
-
 
 
 /**
@@ -202,7 +201,7 @@ OctokitHelper.prototype.getMasterBranchSha = function (repo, callback) {
         repo: repo,
         branch: 'master'
     }).then(result => {
-       callback(result.data.commit.sha);
+        callback(result.data.commit.sha);
     });
 };
 
@@ -217,6 +216,47 @@ OctokitHelper.prototype.getReviewBranchSha = function (repo, reviewerName, callb
 };
 
 /* compares the commit of the master branch with the commit of the review branch */
-
+OctokitHelper.prototype.getCommitDiff = function (repoName, reviewSha, completedReviewSha, callback) {
+    octokit.repos.compareCommits({
+        owner: ORGANIZATION,
+        repo: repoName,
+        base: reviewSha,
+        head: completedReviewSha
+    }).then(result => {
+        let fileChanges = [],
+            files = result.data.files;
+        for (let i = 0; i < files.length; i++) {
+            let patch = files[i].patch;
+            let lines = patch.match(/[\r\n].*/gm),
+                additions = [],
+                subtractions = [],
+                lineCounter = 0;
+            for (let i = 0; i < lines.length; i++) {
+                lineCounter++;
+                let addition = lines[i].match(/^\+.*/gm),
+                    subtraction = lines[i].match(/^-.*/gm);
+                if (addition !== null) {
+                    additions.push({
+                        content: addition[0].replace(/^./g, ''),
+                        line: lineCounter
+                    });
+                }
+                if (subtraction !== null) {
+                    lineCounter--;
+                    subtractions.push({
+                        content: subtraction[0].replace(/^./g, ''),
+                        line: i
+                    });
+                }
+            }
+            fileChanges.push({
+                file: files[i].filename,
+                additions: additions,
+                subtractions: subtractions
+            });
+        }
+        callback(fileChanges);
+    });
+};
 
 export default OctokitHelper;

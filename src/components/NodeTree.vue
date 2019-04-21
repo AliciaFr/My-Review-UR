@@ -32,6 +32,7 @@
         },
         computed: {
             isFolder: function () {
+                console.log(this.node.name);
                 return this.node.children && Object.keys(this.node.children).length;
             }
         },

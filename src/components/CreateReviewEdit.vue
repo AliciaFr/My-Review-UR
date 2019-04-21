@@ -4,7 +4,8 @@
             <sui-menu-item icon="sidebar" @click="toggleMenu" color="black" :active="menuIsActive"></sui-menu-item>
             <sui-menu-item ref="fileName">{{ fileName }}</sui-menu-item>
             <sui-menu-menu position="right">
-                <sui-menu-item :class="{ hidden: checkListIsHidden }" icon="tasks" @click="toggleChecklist" :active="checklistIsActive">
+                <sui-menu-item :class="{ hidden: checkListIsHidden }" icon="tasks" @click="toggleChecklist"
+                               :active="checklistIsActive">
                     Checkliste
                 </sui-menu-item>
             </sui-menu-menu>
@@ -88,8 +89,11 @@
     import 'codemirror/theme/idea.css';
     import 'codemirror/lib/codemirror.css';
 
+    const CODE_ADDITION_LINE_NUMBER_COLOR = "#156615",
+        CODE_ADDITION_LINE_COLOR = "#bef5cb",
+        CODE_ADDITION_CLASS = "styled-background";
+
     let octokitHelper = new OctokitHelper(),
-        codeMirrorHelper = new CodeMirrorHelper(),
         localStorageHelper = new LocalStorageHelper(),
         myFileFetcherTask,
         codemirror;
@@ -98,7 +102,8 @@
         props: {
             repoName: String,
             prevRoute: String,
-            branchSha: String
+            branchSha: String,
+            beforeReviewSha: String
         },
         data: function () {
             return {
@@ -113,7 +118,8 @@
                 filePath: '',
                 cmOption: {
                     tabSize: 4,
-                    styleActiveLine: true,
+                    styleActiveLine: {nonEmpty: true},
+                    styleActiveSelected: true,
                     lineNumbers: true,
                     line: true,
                     foldGutter: true,
@@ -124,7 +130,9 @@
                     extraKeys: {"Ctrl": "autocomplete"},
                     hintOptions: {
                         completeSingle: false
-                    }
+                    },
+                    highlightDifferences: true,
+                    gutters: ["CodeMirror-linenumbers", "add", "delete"]
                 }
 
             }
@@ -134,24 +142,11 @@
             this.getTree();
             if (this.prevRoute === 'reviews') {
                 this.cmOption.readOnly = 'nocursor';
+                this.getDifference();
             }
+            this.initCodeMirror();
+            this.handleOnFileClicked();
 
-            codemirror = new CodeMirror(this.$refs.codeEditor, this.cmOption);
-            EventBus.$on('onFileClick', fileInfo => {
-                myFileFetcherTask = new FileFetcherTask(octokitHelper, self.repoName, fileInfo.sha, function (file) {
-                    if (localStorageHelper.getFile(fileInfo.name) !== null) {
-                        codemirror.setValue(localStorageHelper.getFile(fileInfo.name).content);
-                    } else {
-                        codemirror.setValue(file);
-                    }
-                });
-                myFileFetcherTask.run();
-                this.visibleMenu = false;
-                this.fileName = fileInfo.name;
-                this.fileSha = fileInfo.sha;
-                this.filePath = fileInfo.path;
-                codemirror.setOption("mode", codeMirrorHelper.switchMode(fileInfo.name));
-            });
         },
         components: {
             Tree
@@ -165,6 +160,15 @@
             }
         },
         methods: {
+            setData: function (fileInfo) {
+                this.visibleMenu = false;
+                this.fileName = fileInfo.name;
+                this.fileSha = fileInfo.sha;
+                this.filePath = fileInfo.path;
+            },
+            initCodeMirror: function () {
+                codemirror = new CodeMirror(this.$refs.codeEditor, this.cmOption);
+            },
             getTree: function () {
                 let self = this;
                 let myRepoTreeFetcherTask = new RepoTreeFetcherTask(self.repoName, self.branchSha, octokitHelper, function (tree) {
@@ -189,6 +193,54 @@
                 } else {
                     localStorageHelper.addEntry(this.fileName, this.fileSha, this.filePath, codemirror.getValue());
                 }
+            },
+            handleOnFileClicked: function () {
+                let self = this;
+                EventBus.$on('onFileClick', fileInfo => {
+                    let changedFiles = localStorageHelper.getCommitDiff();
+                    myFileFetcherTask = new FileFetcherTask(octokitHelper, self.repoName, fileInfo.sha, function (file) {
+                        if (localStorageHelper.getFile(fileInfo.name) !== null) {
+                            codemirror.setValue(localStorageHelper.getFile(fileInfo.name).content);
+                        } else {
+                            codemirror.setValue(file);
+                        }
+                        if (changedFiles !== null) {
+                            self.markChangedLines(changedFiles, fileInfo.name);
+                        }
+                    });
+                    myFileFetcherTask.run();
+                    self.setData(fileInfo);
+                });
+            },
+            getDifference: function () {
+                octokitHelper.getCommitDiff('Android-UE-03-AliciaFr', this.beforeReviewSha, this.branchSha, function (changedFiles) {
+                    localStorageHelper.addCommitDiff(changedFiles);
+                });
+
+            },
+            markChangedLines: function (changedFiles, currFile) {
+                for (let i = 0; i < changedFiles.length; i++) {
+                    if (currFile === changedFiles[i].file) {
+                        let additions = changedFiles[i].additions;
+                        for (let i = 0; i < additions.length; i++) {
+                            codemirror.getDoc().addLineClass(additions[i].line - 1, "background", CODE_ADDITION_CLASS);
+                            let info = codemirror.getDoc().lineInfo(additions[i].line - 1);
+                            codemirror.getDoc().setGutterMarker(additions[i].line - 1, "add", info.gutterMarkers ? null : this.makeMarker());
+
+                        }
+                    }
+                }
+            },
+            makeMarker: function () {
+                let marker = document.createElement("div");
+                marker.style.color = CODE_ADDITION_LINE_NUMBER_COLOR;
+                marker.style.background = CODE_ADDITION_LINE_NUMBER_COLOR;
+                marker.style.opacity = "0.5";
+                marker.style.marginLeft = "-2.3em";
+                marker.style.fontWeight = "bold";
+                marker.style.textAlign = "center";
+                marker.innerHTML = "+";
+                return marker;
             }
         },
     }
@@ -219,7 +271,10 @@
     }
 
     .hidden {
-        display: none!important;
+        display: none !important;
     }
 
+    .styled-background {
+        background-color: #e6ffed;
+    }
 </style>

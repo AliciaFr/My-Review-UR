@@ -33,6 +33,7 @@
                                    :repoName="repoTitle"
                                    :repoAuthor="repoAuthor"
                                    :reviewer="reviewer"
+                                   :beforeReviewSha="beforeReviewSha"
                         :reviewId="reviewId">
 
                         </component>
@@ -117,12 +118,13 @@
                 openCancel: false,
                 openWarning: false,
                 branchSha: '',
+                beforeReviewSha: '',
                 repoTitle: '',
                 repoAuthor: '',
                 prevRoute: '',
                 forwardButton: 'Weiter zum Code',
                 backButton: '',
-                commitSha: '',
+                reviewSha: '',
                 reviewId: '',
                 reviewer: '',
                 lastTab: false
@@ -135,6 +137,8 @@
             this.branchSha = this.$route.params.branchSha;
             if (this.prevRoute === 'reviews') {
                 this.reviewId = this.$route.params.id;
+                this.beforeReviewSha = this.$route.params.beforeReviewSha;
+                console.log(this.$route.params.beforeReviewSha);
                 this.getReviewer();
                 if (this.tabs[this.tabs.length - 1].title !== 'Bewertung des Reviews') {
                     this.tabs.push({
@@ -172,9 +176,9 @@
                 let repoOwner = this.repoAuthor;
                 let reviewer = localStorageHelper.getUserId();
                 if (editedFiles !== null) {
-                    myFirebaseHelper.getReviewBranchSha(repo, repoOwner, reviewer, function (commitSha) {
+                    myFirebaseHelper.getReviewBranchSha(repo, repoOwner, reviewer, function (reviewSha) {
                         repoOwner = repoOwner.replace(/\s/g, '-');
-                        octokitHelper.createBranch(repo, repoOwner, commitSha, editedFiles);
+                        octokitHelper.createBranch(repo, repoOwner, reviewSha, editedFiles);
                     });
                     myFirebaseHelper.setReviewStatus(repo, repoOwner, "completed", self.getTodaysDate());
                     self.goToHome();
