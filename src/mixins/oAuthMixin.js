@@ -19,13 +19,15 @@ export default {
             firebase.auth().signInWithPopup(loginProvider).then((result) => {
                 let uid = result.user.uid,
                     gitHubLogin = result.additionalUserInfo.username,
-                    dbRef = database.ref("users/");
+                    dbRef = database.ref("users/"),
+                    username = createUserName();
                 if (checkUser(dbRef, uid) === false) {
-                    databaseHelper.createAccount(dbRef, uid, createUserName(), createProfilePicture(), gitHubLogin);
+                    databaseHelper.createAccount(dbRef, uid, username, createProfilePicture(), gitHubLogin);
                 }
                 myLocalStorageHelper.addUserId(uid);
+                myLocalStorageHelper.addGitHubLogin(gitHubLogin);
+                myLocalStorageHelper.addUsername(username);
                 this.$router.replace('home');
-                localStorage.setItem('gitHubLogin', gitHubLogin);
             }).catch((err) => {
                 alert('Oops. ' + err.message)
             });

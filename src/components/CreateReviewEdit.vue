@@ -2,7 +2,9 @@
     <div class="create-review-editor">
         <sui-menu attached="top">
             <sui-menu-item icon="sidebar" @click="toggleMenu" color="black" :active="menuIsActive"></sui-menu-item>
-            <sui-menu-item ref="fileName">{{ fileName }}</sui-menu-item>
+            <sui-menu-item ref="fileName">
+                {{ fileName }}
+            </sui-menu-item>
             <sui-menu-menu position="right">
                 <sui-menu-item :class="{ hidden: checkListIsHidden }" icon="tasks" @click="toggleChecklist"
                                :active="checklistIsActive">
@@ -54,8 +56,14 @@
                         <sui-sidebar animation="overlay" style="height: 500px!important;" width="wide"
                                      class="inverted navigation"
                                      :visible="visibleMenu">
-                            <sui-header inverted>{{ repoName }}</sui-header>
-                            <tree v-for="file in files" :tree-data="file"></tree>
+                            <sui-header inverted>{{ repoTitle }}</sui-header>
+                            <div v-if="files.length < 1">
+                                <sui-icon name="circle notched inverted" loading size="big"></sui-icon>
+                                <span class="loading-project">Das Projekt wird geladen.</span>
+                            </div>
+                            <div v-else>
+                            <tree v-for="file in files" :tree-data="file" :changedFiles="changedFilePath"></tree>
+                            </div>
                         </sui-sidebar>
                         <sui-sidebar-pusher @click="visibleMenu = false; menuIsActive = false">
                             <div class="ui container">
@@ -81,6 +89,7 @@
     import OctokitHelper from '../javascript/github/OctokitHelper';
     import CodeMirrorHelper from '../javascript/CodeMirrorHelper';
     import LocalStorageHelper from '../javascript/LocalStorageHelper';
+    import _ from 'underscore';
     import CodeMirror from 'codemirror';
 
     import 'codemirror/mode/javascript/javascript.js';
@@ -90,7 +99,6 @@
     import 'codemirror/lib/codemirror.css';
 
     const CODE_ADDITION_LINE_NUMBER_COLOR = "#156615",
-        CODE_ADDITION_LINE_COLOR = "#bef5cb",
         CODE_ADDITION_CLASS = "styled-background";
 
     let octokitHelper = new OctokitHelper(),
@@ -100,7 +108,8 @@
 
     export default {
         props: {
-            repoName: String,
+            completeRepoName: String,
+            repoTitle: String,
             prevRoute: String,
             branchSha: String,
             beforeReviewSha: String
@@ -108,6 +117,8 @@
         data: function () {
             return {
                 files: [],
+                tree: {},
+                changedFilePath: [],
                 visibleMenu: true,
                 menuIsActive: true,
                 visibleChecklist: false,
@@ -116,6 +127,7 @@
                 fileName: '',
                 fileSha: '',
                 filePath: '',
+                repoName: this.completeRepoName,
                 cmOption: {
                     tabSize: 4,
                     styleActiveLine: {nonEmpty: true},
@@ -138,12 +150,12 @@
             }
         },
         mounted() {
-            let self = this;
-            this.getTree();
             if (this.prevRoute === 'reviews') {
                 this.cmOption.readOnly = 'nocursor';
                 this.getDifference();
+                this.createChangedFilePath(localStorageHelper.getCommitDiff());
             }
+            this.getTree();
             this.initCodeMirror();
             this.handleOnFileClicked();
 
@@ -171,10 +183,45 @@
             },
             getTree: function () {
                 let self = this;
-                let myRepoTreeFetcherTask = new RepoTreeFetcherTask(self.repoName, self.branchSha, octokitHelper, function (tree) {
-                        self.files = tree;
+                let myRepoTreeFetcherTask = new RepoTreeFetcherTask(self.completeRepoName, self.branchSha, octokitHelper, function (tree) {
+                    self.files = tree;
+                    if (self.changedFilePath.length > 0) {
+                        for (let key in tree) {
+                            if (tree.hasOwnProperty(key)) {
+                                getObject(tree[key]);
+                                function getObject(obj, fileName) {
+                                    console.log(fileName);
+                                    let result = null;
+                                    if (obj instanceof Array) {
+                                        for (let i = 0; i < obj.length; i++) {
+                                            result = getObject(obj[i]);
+                                            if (result) {
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    else {
+                                        for (var prop in obj) {
+                                            if (prop === 'name') {
+                                                if (obj[prop] === fileName) {
+                                                    obj.changed = true;
+                                                }
+                                            }
+                                            if (obj[prop] instanceof Object || obj[prop] instanceof Array) {
+                                                result = getObject(obj[prop]);
+                                                if (result) {
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                        }
+
                     }
-                );
+                });
                 myRepoTreeFetcherTask.run();
             },
             toggleMenu: function (event) {
@@ -213,7 +260,7 @@
                 });
             },
             getDifference: function () {
-                octokitHelper.getCommitDiff('Android-UE-03-AliciaFr', this.beforeReviewSha, this.branchSha, function (changedFiles) {
+                octokitHelper.getCommitDiff(this.repoName, this.beforeReviewSha, this.branchSha, function (changedFiles) {
                     localStorageHelper.addCommitDiff(changedFiles);
                 });
 
@@ -241,6 +288,17 @@
                 marker.style.textAlign = "center";
                 marker.innerHTML = "+";
                 return marker;
+            },
+            createChangedFilePath: function (changedFiles) {
+                let allSplittedPaths = [];
+                for (let i = 0; i < changedFiles.length; i++) {
+                    let singleSplittedPaths = changedFiles[i].filePath.replace(/^\/|\/$/g, "").split('/');
+                    for (let i = 0; i < singleSplittedPaths.length; i++) {
+                        allSplittedPaths.push(singleSplittedPaths[i]);
+                    }
+                }
+                console.log(this.changedFilePath);
+                this.changedFilePath = _.uniq(allSplittedPaths);
             }
         },
     }
@@ -276,5 +334,9 @@
 
     .styled-background {
         background-color: #e6ffed;
+    }
+
+    .loading-project {
+        color: #fff;
     }
 </style>

@@ -56,6 +56,11 @@
                 currentTab: tabs[0]
             }
         },
+        mounted () {
+            if (this.$route.params.prevRoute === 'dashboard') {
+                this.currentTab = tabs[1];
+            }
+        },
         components: {
             "reviewsForReviewer": reviewsForReviewer,
             'reviewsForProjects': reviewsForProjects

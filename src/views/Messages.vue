@@ -1,6 +1,5 @@
 <template>
     <div class="messages">
-        <nav-bar></nav-bar>
         <list-messages></list-messages>
     </div>
 </template>
@@ -16,3 +15,10 @@
         }
     }
 </script>
+
+<style>
+    .messages {
+        padding-top: 5em;
+        padding-bottom: 10em;
+    }
+</style>

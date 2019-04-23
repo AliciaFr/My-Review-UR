@@ -18,9 +18,14 @@ RepositoryFetcherTask.prototype.run = function () {
 };
 
 RepositoryFetcherTask.prototype.onFirebaseReposAvailable = function (repos) {
-    this.currentFirebaseRepos = repos;
-    this.firebaseHelper.getUserName(this.uid).then(this.onUserNameAvailable);
     that = this;
+    for (let i = 0; i < repos.length; i++) {
+        that.firebaseHelper.getProfilePicture(that.uid, function (imgUrl) {
+            repos[i].profilePicture = imgUrl;
+        });
+    }
+    that.currentFirebaseRepos = repos;
+    this.firebaseHelper.getUserName(this.uid).then(this.onUserNameAvailable);
 };
 
 RepositoryFetcherTask.prototype.onUserNameAvailable = function (username) {
@@ -49,10 +54,15 @@ RepositoryFetcherTask.prototype.mergeRepositories = function () {
         let pluckFirebaseRepos = _.pluck(that.currentFirebaseRepos, 'name');
         result = _.difference(pluckGitHubRepos, pluckFirebaseRepos);
         for (let i = 0; i < result.length; i++) {
-            this.unpublishedRepos.push({
-                name: result[i],
-                userName: that.username
-            })
+            that.firebaseHelper.getUid(that.username).then(function (uid) {
+                that.firebaseHelper.getProfilePicture(uid, function (imgUrl) {
+                    that.unpublishedRepos.push({
+                        name: result[i],
+                        userName: that.username,
+                        profilePicture: imgUrl
+                    });
+                });
+            });
         }
     }
     that.callback(that.unpublishedRepos);

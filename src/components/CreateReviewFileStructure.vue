@@ -1,7 +1,7 @@
 <template>
     <div class="tree">
         <sui-list class="tree-list">
-            <node-tree :node="treeData"></node-tree>
+            <node-tree :node="treeData" :changedFiles="changedFiles"></node-tree>
         </sui-list>
     </div>
 </template>
@@ -11,7 +11,8 @@
 
     export default {
         props: {
-            treeData: Object
+            treeData: Object,
+            changedFiles: Array
         },
         components: {
             NodeTree

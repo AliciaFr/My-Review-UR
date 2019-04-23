@@ -48,6 +48,7 @@
 
 <script>
     import FirebaseHelper from '../javascript/FirebaseHelper';
+    import {EventBus} from '../main';
 
     let firebaseHelper = new FirebaseHelper();
 
@@ -75,6 +76,7 @@
             publishRepo: function () {
                 firebaseHelper.setRepo(this.repoTitle, this.$route.params.uid, this.testingErrors, this.extensions);
                 this.assignRepo();
+                EventBus.$emit('onProjectShared', this.repoTitle);
                 this.$router.replace('home');
             },
             cancel: function () {

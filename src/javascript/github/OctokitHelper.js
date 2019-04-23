@@ -75,7 +75,8 @@ function buildStructuredTree(tree) {
             let node = {
                 name: splitpath[i],
                 type: 'directory',
-                path: obj.path
+                path: obj.path,
+                changed: false
             };
             if (i === splitpath.length - 1) {
                 node.sha = obj.sha;
@@ -223,40 +224,48 @@ OctokitHelper.prototype.getCommitDiff = function (repoName, reviewSha, completed
         base: reviewSha,
         head: completedReviewSha
     }).then(result => {
+        console.log(result.data.files.length);
         let fileChanges = [],
             files = result.data.files;
         for (let i = 0; i < files.length; i++) {
             let patch = files[i].patch;
-            let lines = patch.match(/[\r\n].*/gm),
-                additions = [],
-                subtractions = [],
-                lineCounter = 0;
-            for (let i = 0; i < lines.length; i++) {
-                lineCounter++;
-                let addition = lines[i].match(/^\+.*/gm),
-                    subtraction = lines[i].match(/^-.*/gm);
-                if (addition !== null) {
-                    additions.push({
-                        content: addition[0].replace(/^./g, ''),
-                        line: lineCounter
-                    });
+            if (patch !== undefined) {
+                let lines = patch.match(/[\r\n].*/gm),
+                    additions = [],
+                    subtractions = [],
+                    lineCounter = 0;
+                for (let i = 0; i < lines.length; i++) {
+                    lineCounter++;
+                    let addition = lines[i].match(/^\+.*/gm),
+                        subtraction = lines[i].match(/^-.*/gm);
+                    if (addition !== null) {
+                        additions.push({
+                            content: addition[0].replace(/^./g, ''),
+                            line: lineCounter
+                        });
+                    }
+                    if (subtraction !== null) {
+                        lineCounter--;
+                        subtractions.push({
+                            content: subtraction[0].replace(/^./g, ''),
+                            line: i
+                        });
+                    }
                 }
-                if (subtraction !== null) {
-                    lineCounter--;
-                    subtractions.push({
-                        content: subtraction[0].replace(/^./g, ''),
-                        line: i
-                    });
-                }
+                fileChanges.push({
+                    file: getFileNameFromPath(files[i].filename),
+                    filePath: files[i].filename,
+                    additions: additions,
+                    subtractions: subtractions
+                });
             }
-            fileChanges.push({
-                file: files[i].filename,
-                additions: additions,
-                subtractions: subtractions
-            });
         }
         callback(fileChanges);
     });
 };
+
+function getFileNameFromPath (path) {
+    return path.split('/').pop();
+}
 
 export default OctokitHelper;

@@ -83,12 +83,15 @@
 
             },
             setRouteParams (review, branchSha) {
+                console.log(review);
                 this.$router.replace({
                     name: 'viewReview',
                     params: {
                         id: review.id,
                         repoTitle: review.repo,
-                        repoAuthor: '',
+                        repoName: review.repo,
+                        repoAuthor: myLocalStorageHelper.getUsername(),
+                        reviewerId: review.reviewer,
                         reviewerName: review.reviewerName,
                         prevRoute: 'reviews',
                         branchSha: branchSha,

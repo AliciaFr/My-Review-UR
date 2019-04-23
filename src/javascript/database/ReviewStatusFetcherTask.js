@@ -59,7 +59,6 @@ ReviewStatusFetcherTask.prototype.findUsernameForRepoAuthor = function (repos) {
             resultReviews.push(repos[i]);
         }
         that.callback(resultReviews);
-        console.log(resultReviews);
     });
 };
 

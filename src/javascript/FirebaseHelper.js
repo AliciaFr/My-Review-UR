@@ -4,6 +4,7 @@
 
 import firebase from 'firebase';
 import ReviewStatusFetcherTask from './database/ReviewStatusFetcherTask';
+import RepoStatusFetcherTask from './database/RepoStatusFetcherTask';
 import AssignRepoFetcherTask from './database/AssignRepoFetcherTask';
 import ReviewsForUserFetcherTask from './database/ReviewsForUserFetcherTask';
 
@@ -71,9 +72,12 @@ FirebaseHelper.prototype.getRepoStatus = function (repoId, callback) {
     reviewEntries.on('value', snap => {
         snap.forEach(function (child) {
             if (repoId === child.val().repo) {
-                callback(child.val().status);
-            } else {
-                callback('not published')
+                if (child.val().rating !== '') {
+                    callback('reviewRated');
+                } else {
+                    callback(child.val().status);
+
+                }
             }
         });
     });
@@ -105,8 +109,15 @@ FirebaseHelper.prototype.getReviewsForUser = function (uid) {
 };
 
 FirebaseHelper.prototype.getAssignedReviews = function (uid, callback) {
+    let that = this;
     let task = new ReviewStatusFetcherTask(uid, 'assigned', function (reviews) {
-        callback(reviews);
+        for (let i = 0; i < reviews.length; i++) {
+            that.getProfilePicture(reviews[i].author, function (imgUrl) {
+                reviews[i].profilePicture = imgUrl;
+                callback(reviews);
+
+            });
+        }
     });
     task.run();
 };
@@ -124,10 +135,25 @@ FirebaseHelper.prototype.getReviewsForReviewer = function (uid, callback) {
     task.run();
 };
 
+FirebaseHelper.prototype.checkRepoForStatus = function (uid, repoName, firebaseHelper, callback) {
+    let task = new RepoStatusFetcherTask(repoName, uid, firebaseHelper, function (repo) {
+       callback(repo);
+    });
+    task.run();
+    console.log(task);
+};
+
 /* Gets all Reviews with the status "completed" in which the current user is the reviewer of the assigned repository */
 FirebaseHelper.prototype.getCompletedReviewsFromUser = function (uid, callback) {
+    let that = this;
     let task = new ReviewStatusFetcherTask(uid, 'completed', function (reviews) {
-        callback(reviews);
+        for (let i = 0; i < reviews.length; i++) {
+            that.getProfilePicture(reviews[i].author, function (imgUrl) {
+                reviews[i].profilePicture = imgUrl;
+                callback(reviews);
+
+            });
+        }
     });
     task.run();
 };
