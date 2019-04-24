@@ -1,17 +1,18 @@
 <template>
   <div id="app">
     <app-header></app-header>
-    <router-view/>
+    <keep-alive>
+      <router-view></router-view>
+    </keep-alive>
   </div>
 </template>
 
 <script>
     import navBar from './components/NavBar.vue';
 
-
     export default {
       components: {
-          'app-header': navBar
+          'app-header': navBar,
       }
   }
 </script>

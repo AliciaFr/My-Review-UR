@@ -168,7 +168,7 @@ function getDeadline(repo, callback) {
     octokit.repos.getContents({
         owner: ORGANIZATION,
         repo: repo,
-        path: 'deadline.json'
+        path: 'config.json'
     }).then(result => {
         let deadlineFile = JSON.parse(Base64.decode(result.data.content));
         callback(deadlineFile.deadline);

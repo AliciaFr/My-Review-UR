@@ -92,6 +92,7 @@
 <style>
     .share-project {
         padding-top: 5em;
+        padding-bottom: 10em;
     }
 </style>
 

@@ -21,7 +21,7 @@
                 <sui-grid-column :width="2"></sui-grid-column>
                 <sui-grid-column :width="12">
                     <sui-message
-                            :class="hideSuccessMessage"
+                            :class="{ successNotActive: hideSuccessMessage}"
                             :header="successMessage"
                     ></sui-message>
                 </sui-grid-column>
@@ -171,6 +171,9 @@
     import RepoStatusFetcherTask from '../javascript/database/RepoStatusFetcherTask';
     import LocalStorageHelper from '../javascript/LocalStorageHelper';
 
+    const SUCCESS_MESSAGE_REVIEWED = 'Das Review wurde erfolgreich versendet.';
+    const SUCCESS_MESSAGE_SHARED = 'Dein Projekt wurde erfolgreich freigegeben.';
+
     let octokitHelper = new OctokitHelper(),
         firebaseHelper = new FirebaseHelper(),
         myLocalStorageHelper = new LocalStorageHelper();
@@ -197,7 +200,7 @@
                 stateCompleted: 'disabled',
                 stateReviewRated: 'disabled',
                 successMessage: 'Dein Projekt wurde erfolgreich freigegeben.',
-                hideSuccessMessage: 'successMessage',
+                hideSuccessMessage: true,
                 username: myLocalStorageHelper.getUsername()
             };
         },
@@ -239,7 +242,6 @@
         },
         created() {
             this.onProjectShared();
-
         },
         computed: {},
         methods: {
@@ -346,14 +348,22 @@
                 });
             },
             onProjectShared () {
-                EventBus.$on('onProjectShared', this.controllSuccessMessage);
+                EventBus.$on('onProjectShared',() =>{
+                    this.controllSuccessMessage();
+                    this.successMessage = SUCCESS_MESSAGE_SHARED;
+                });
+            },
+            onProjectReviewed () {
+                EventBus.$on('onProjectReviewed',() =>{
+                    this.controllSuccessMessage();
+                    this.successMessage = SUCCESS_MESSAGE_REVIEWED;
+                });
             },
             controllSuccessMessage () {
-                this.hideSuccessMessage = '';
-                setTimeout(function () {
-                    //self.hideSuccessMessage = !self.hideSuccessMessage;
-                    this.hideSuccessMessage = 'successMessage';
-                }, 5000);
+                this.hideSuccessMessage = false;
+                setTimeout(() => {
+                    this.hideSuccessMessage = true;
+                }, 3000);
             }
         },
         mixins: [dashboardMixin]
@@ -366,7 +376,7 @@
         padding-bottom: 10em;
     }
 
-    .successMessage {
+    .successNotActive {
         display: none;
     }
 

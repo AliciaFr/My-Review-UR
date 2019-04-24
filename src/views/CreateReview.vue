@@ -228,6 +228,7 @@
                         octokitHelper.createBranch(fullRepoName, repoOwner, reviewSha, editedFiles);
                     });
                     myFirebaseHelper.setReviewStatus(repo, repoOwner, "completed", self.getTodaysDate());
+                    EventBus.$emit('onProjectReviewed', this.repoTitle);
                     self.goToHome();
                     localStorageHelper.deleteAllFiles();
                 } else {

@@ -251,7 +251,7 @@
                         } else {
                             codemirror.setValue(file);
                         }
-                        if (changedFiles !== null) {
+                        if (self.prevRoute === "reviews" && changedFiles !== null) {
                             self.markChangedLines(changedFiles, fileInfo.name);
                         }
                     });
