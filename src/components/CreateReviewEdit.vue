@@ -154,8 +154,10 @@
                 this.cmOption.readOnly = 'nocursor';
                 this.getDifference();
                 this.createChangedFilePath(localStorageHelper.getCommitDiff());
+                this.getTreeForReviewReader();
             }
             this.getTree();
+            this.getTreeForReviewAuthor();
             this.initCodeMirror();
             this.handleOnFileClicked();
 
@@ -224,6 +226,14 @@
                 });
                 myRepoTreeFetcherTask.run();
             },
+            getTreeForReviewAuthor: function() {
+
+            },
+            getTreeForReviewReader: function() {
+                // Get marked tree via ocotokit (getRepoTreeWithMarkedChanges)
+
+
+            };
             toggleMenu: function (event) {
                 event.cancelBubble = true;
                 this.visibleMenu = !this.visibleMenu;
@@ -290,15 +300,19 @@
                 return marker;
             },
             createChangedFilePath: function (changedFiles) {
-                let allSplittedPaths = [];
+                let changedFiles = [];
+                // let allSplittedPaths = [];
                 for (let i = 0; i < changedFiles.length; i++) {
+                    changedFiles.push(changedFiles[i].filePath);
+                    /*
                     let singleSplittedPaths = changedFiles[i].filePath.replace(/^\/|\/$/g, "").split('/');
                     for (let i = 0; i < singleSplittedPaths.length; i++) {
                         allSplittedPaths.push(singleSplittedPaths[i]);
-                    }
+                    }*/
                 }
-                console.log(this.changedFilePath);
-                this.changedFilePath = _.uniq(allSplittedPaths);
+                // console.log(this.changedFilePath);
+                // this.changedFilePath = _.uniq(allSplittedPaths);
+                this.changedFiles = changedFiles;
             }
         },
     }

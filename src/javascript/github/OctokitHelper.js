@@ -12,16 +12,16 @@ const ORGANIZATION = 'uniregensburgreview';
 const COMMIT_BRANCH = 'refs/heads/uni-regensburg-review-';
 const COMMIT_MESSAGE = 'Uni Regensburg Review';
 
-let octokit = new Octokit({auth: 'token ' + '2983d2539996337ea1f69a320d2a60911bdffa76'});
+let octokit = new Octokit({ auth: 'token ' + '2983d2539996337ea1f69a320d2a60911bdffa76' });
 
 function OctokitHelper() {
     this.octokit = octokit;
 }
 
-OctokitHelper.prototype.getUserRepos = function (gitHubLogin, username, callback) {
+OctokitHelper.prototype.getUserRepos = function(gitHubLogin, username, callback) {
     // Creates task to get all repos from "organization" to which "user" has contributed
     // Last parameter is a callback function, called when task is completed
-    let task = new UserRepositoriesFetcherTask(octokit, ORGANIZATION, gitHubLogin, function (repos) {
+    let task = new UserRepositoriesFetcherTask(octokit, ORGANIZATION, gitHubLogin, function(repos) {
         let userRepos = [];
         for (let i = 0; i < repos.length; i++) {
             let repoName = repos[i];
@@ -41,11 +41,26 @@ OctokitHelper.prototype.getUserRepos = function (gitHubLogin, username, callback
  * Gets the file structure of a repository (async), transforms the flat structure into a
  * tree structures and returns the results through a passed callback
  */
-OctokitHelper.prototype.getRepoTree = function (repoName, treeSha, callback) {
-    getTree(this.octokit, repoName, treeSha, function (tree) {
+OctokitHelper.prototype.getRepoTree = function(repoName, treeSha, callback) {
+    getTree(this.octokit, repoName, treeSha, function(tree) {
         let structuredTree = buildStructuredTree(tree);
         callback(structuredTree);
     });
+};
+
+OctokitHelper.prototype.getRepoTreeWithMarkedChanges = function(repoName, treeSha, callback) {
+    let reviewSha;
+    let completedReviewSha;
+
+    this.getCommitDiff(repoName, reviewSha, completedReviewSha, function(changedFiles) {
+       let changedPaths = createChangedFilePath(changedFiles);
+        getTree(this.octokit, repoName, treeSha, function(tree) {
+            let markedTree = buildMarkedTree(tree, changedPaths);
+            callback(markedTree);
+        })
+
+    });
+
 };
 
 function getTree(octokit, repo, treeSha, callback) {
@@ -58,6 +73,43 @@ function getTree(octokit, repo, treeSha, callback) {
         callback(result.data.tree);
     });
 }
+
+function buildMarkedTree(tree, changedPaths) {
+    let arr = [];
+    let structuredTree = {};
+
+    for (let i = 0; i < tree.length; i++) {
+        arr.push(tree[i]);
+    }
+
+    function addnode(obj) {
+        let splitpath = obj.path.replace(/^\/|\/$/g, "").split('/');
+        let pointer = structuredTree;
+        let changed = changedPaths.contains(obj.path);
+
+        for (let i = 0; i < splitpath.length; i++) {
+            let node = {
+                name: splitpath[i],
+                type: 'directory',
+                path: obj.path,
+                changed: changed
+            };
+            if (i === splitpath.length - 1) {
+                node.sha = obj.sha;
+                node.type = obj.type;
+            }
+            pointer[splitpath[i]] = pointer[splitpath[i]] || node;
+            pointer[splitpath[i]].children = pointer[splitpath[i]].children || {};
+            pointer = pointer[splitpath[i]].children;
+        }
+    }
+
+    arr.map(addnode);
+    _.toArray(structuredTree);
+
+    return structuredTree;
+}
+
 
 // Quelle: https://stackoverflow.com/questions/19531453/transform-file-directory-structure-into-tree-in-javascript
 function buildStructuredTree(tree) {
@@ -93,8 +145,8 @@ function buildStructuredTree(tree) {
     return structuredTree;
 }
 
-OctokitHelper.prototype.getFile = function (repo, sha, callback) {
-    getBlob(this.octokit, repo, sha, function (blob) {
+OctokitHelper.prototype.getFile = function(repo, sha, callback) {
+    getBlob(this.octokit, repo, sha, function(blob) {
         let decodedFile = decodeBlob(blob);
         callback(decodedFile);
     });
@@ -114,7 +166,7 @@ function decodeBlob(blob) {
     return Base64.decode(blob);
 }
 
-OctokitHelper.prototype.createBranch = function (repo, reviewer, repoSha, editedFiles) {
+OctokitHelper.prototype.createBranch = function(repo, reviewer, repoSha, editedFiles) {
     let ref = COMMIT_BRANCH + reviewer;
     this.octokit.git.createRef({
         owner: ORGANIZATION,
@@ -157,8 +209,8 @@ function encodeBlob(file) {
 }
 
 /* checks if the deadline of a repo is already over. If it is over the repo can be submitted. */
-OctokitHelper.prototype.isSubmitted = function (repo, callback) {
-    getDeadline(repo, function (deadline) {
+OctokitHelper.prototype.isSubmitted = function(repo, callback) {
+    getDeadline(repo, function(deadline) {
         let isSubmitted = isLater(deadline);
         callback(isSubmitted);
     });
@@ -185,7 +237,7 @@ function isLater(deadline) {
 }
 
 /* gets the task description of a repo */
-OctokitHelper.prototype.getProjectTask = function (repo, callback) {
+OctokitHelper.prototype.getProjectTask = function(repo, callback) {
     octokit.repos.getContents({
         owner: ORGANIZATION,
         repo: repo,
@@ -196,7 +248,7 @@ OctokitHelper.prototype.getProjectTask = function (repo, callback) {
     });
 };
 
-OctokitHelper.prototype.getMasterBranchSha = function (repo, callback) {
+OctokitHelper.prototype.getMasterBranchSha = function(repo, callback) {
     octokit.repos.getBranch({
         owner: ORGANIZATION,
         repo: repo,
@@ -206,7 +258,7 @@ OctokitHelper.prototype.getMasterBranchSha = function (repo, callback) {
     });
 };
 
-OctokitHelper.prototype.getReviewBranchSha = function (repo, reviewerName, callback) {
+OctokitHelper.prototype.getReviewBranchSha = function(repo, reviewerName, callback) {
     octokit.repos.getBranch({
         owner: ORGANIZATION,
         repo: repo,
@@ -217,7 +269,7 @@ OctokitHelper.prototype.getReviewBranchSha = function (repo, reviewerName, callb
 };
 
 /* compares the commit of the master branch with the commit of the review branch */
-OctokitHelper.prototype.getCommitDiff = function (repoName, reviewSha, completedReviewSha, callback) {
+OctokitHelper.prototype.getCommitDiff = function(repoName, reviewSha, completedReviewSha, callback) {
     octokit.repos.compareCommits({
         owner: ORGANIZATION,
         repo: repoName,
@@ -264,8 +316,18 @@ OctokitHelper.prototype.getCommitDiff = function (repoName, reviewSha, completed
     });
 };
 
-function getFileNameFromPath (path) {
+function getFileNameFromPath(path) {
     return path.split('/').pop();
+}
+
+function createChangedFilePath(changedFiles) {
+    let changedFiles = [];
+    for (let i = 0; i < changedFiles.length; i++) {
+        if (changedFiles[i].subtractions.length !== 0) {
+            changedFiles.push(changedFiles[i].filePath);
+        }
+    }
+    this.changedFiles = changedFiles;
 }
 
 export default OctokitHelper;
