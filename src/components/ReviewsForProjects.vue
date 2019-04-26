@@ -1,7 +1,7 @@
 <template>
     <div class="project-reviews">
         <sui-segment>
-            <p class="info">Bewertungen werden im Anschluss an ein erhaltenes Review verfasst. Die Bewertungen, die du erhalten hast sind nicht für andere sichtbar.</p>
+            <p class="info">Hier findest du all deine erhaltenen Reviews, für die Projekte, die du freigegeben hast.</p>
             <sui-header :class="hasNoReviews" size="medium">Ups! Du hast noch keine Bewertungen bekommen.</sui-header>
             <sui-item-group divided padded="very">
                 <sui-item id="single-review" v-for="review in reviews">

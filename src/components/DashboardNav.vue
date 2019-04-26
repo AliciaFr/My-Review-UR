@@ -1,5 +1,5 @@
 <template>
-    <sui-segment>
+    <sui-segment class="dashboard-nav">
         <sui-menu vertical text v-for="item in items">
             <sui-menu-header @click="select()">{{ item.label }}</sui-menu-header>
             <sui-menu-item v-for="child in item.children" :key="child.label" :active="isActive(child.label)"
@@ -73,4 +73,5 @@
     .header {
         font-weight: bold;
     }
+
 </style>

@@ -16,6 +16,14 @@ let octokit = new Octokit({auth: 'token ' + '2983d2539996337ea1f69a320d2a60911bd
 
 function OctokitHelper() {
     this.octokit = octokit;
+    octokit.git.getTree({
+        owner: ORGANIZATION,
+        repo: 'OOP-JumpAndRun-CrUR1',
+        tree_sha: 'refs/heads/uni-regensburg-review',
+        recursive: 1
+    }).then(result => {
+        console.log(result.data);
+    });
 }
 
 OctokitHelper.prototype.getUserRepos = function (gitHubLogin, username, callback) {

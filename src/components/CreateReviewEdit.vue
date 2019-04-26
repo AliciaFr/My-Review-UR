@@ -20,37 +20,33 @@
                     <sui-header>Hast du an alles gedacht?</sui-header>
                     <sui-form>
                         <sui-form-fields grouped>
-                            <label>Performance</label>
                             <sui-form-field>
-                                <sui-checkbox label="Speicherplatz"></sui-checkbox>
+                                <sui-checkbox label="Duplikate vermeiden"></sui-checkbox>
                             </sui-form-field>
                             <sui-form-field>
-                                <sui-checkbox label="Duplikate"></sui-checkbox>
+                                <sui-checkbox label="Einhaltung von Coding Konventionen"></sui-checkbox>
                             </sui-form-field>
                             <sui-form-field>
-                                <sui-checkbox label="Coding Konventionen"></sui-checkbox>
+                                <sui-checkbox label="Verwendung von Coding Best Practices"></sui-checkbox>
+                            </sui-form-field>
+                             <sui-form-field>
+                                <sui-checkbox label="Verständlichkeit des Codes"></sui-checkbox>
                             </sui-form-field>
                             <sui-form-field>
-                                <sui-checkbox label="Sinnvolle Bezeichner"></sui-checkbox>
+                                <sui-checkbox label="Sinnvolle Bezeichner für Methoden, Variablen, etc."></sui-checkbox>
                             </sui-form-field>
                             <sui-form-field>
                                 <sui-checkbox label="Architektur"></sui-checkbox>
                             </sui-form-field>
                             <sui-form-field>
-                                <sui-checkbox label="Documentation"></sui-checkbox>
+                                <sui-checkbox label="Documentation: Ist alles kommentiert? Ergeben die Kommentare Sinn?"></sui-checkbox>
                             </sui-form-field>
                             <sui-form-field>
                                 <sui-checkbox label="Performanz"></sui-checkbox>
                             </sui-form-field>
                             <sui-form-field>
-                                <sui-checkbox label="Logische Fehler"></sui-checkbox>
-                            </sui-form-field>
-                            <sui-form-field>
-                                <sui-checkbox label="Wartbarkeit"></sui-checkbox>
-                            </sui-form-field>
-                            <sui-form-field>
-                                <sui-checkbox label="Coding Best Practices"></sui-checkbox>
-                            </sui-form-field>
+                                <sui-checkbox label="Logische Fehler, Bugs"></sui-checkbox>
+                            </sui-form-field>    
                         </sui-form-fields>
                     </sui-form>
                 </sui-sidebar>
@@ -246,15 +242,160 @@
                 let completeRepoName = this.repoName;
                 console.log(completeRepoName);
                 octokitHelper.getCommitDiff(completeRepoName,'20021e233f33f44b317720abf4267650d2da78b9', '30f347b96ff1ec23b05fa8d135114e5ea79c6745', function (changedFiles) {
-                    console.log(changedFiles);
                     localStorageHelper.addCommitDiff(changedFiles);
                 });
 
             },
             markChangedLines: function (changedFiles, currFile) {
-                for (let i = 0; i < changedFiles.length; i++) {
-                    if (currFile === changedFiles[i].file) {
-                        let additions = changedFiles[i].additions;
+                let testChangedFiles = [
+                    {
+                        additions: [
+                            {
+                                content: "",
+                                line: "1"
+                            },
+                            {
+                                content: "",
+                                line: "15"
+                            },
+                            {
+                                content: "",
+                                line: "16"
+                            },
+                            {
+                                content: "",
+                                line: "17"
+                            },
+                            {
+                                content: "",
+                                line: "18"
+                            },
+                            {
+                                content: "",
+                                line: "19"
+                            },
+                            {
+                                content: "",
+                                line: "20"
+                            },
+                            {
+                                content: "",
+                                line: "21"
+                            },
+                            {
+                                content: "",
+                                line: "22"
+                            },
+                            {
+                                content: "",
+                                line: "23"
+                            },
+                            {
+                                content: "",
+                                line: "33"
+                            },
+                            {
+                                content: "",
+                                line: "38"
+                            },
+                            {
+                                content: "",
+                                line: "43"
+                            },
+                            {
+                                content: "",
+                                line: "93"
+                            },
+                            {
+                                content: "",
+                                line: "94"
+                            },
+                            {
+                                content: "",
+                                line: "95"
+                            },
+                            {
+                                content: "",
+                                line: "96"
+                            },
+                            {
+                                content: "",
+                                line: "97"
+                            },
+                            {
+                                content: "",
+                                line: "98"
+                            },
+                            {
+                                content: "",
+                                line: "99"
+                            },
+                            {
+                                content: "",
+                                line: "100"
+                            },
+                            {
+                                content: "",
+                                line: "101"
+                            },
+                            {
+                                content: "",
+                                line: "102"
+                            },
+                            {
+                                content: "",
+                                line: "103"
+                            },
+                            {
+                                content: "",
+                                line: "104"
+                            },
+                            {
+                                content: "",
+                                line: "105"
+                            },
+                            {
+                                content: "",
+                                line: "106"
+                            }
+                        ],
+                        file: "PitManager.java",
+                        filePath: "PitManager.java"
+                    },
+                    {
+                        additions: [
+                            {
+                                content: "",
+                                line: "1"
+                            },
+                            {
+                                content: "",
+                                line: "12"
+                            },
+                            {
+                                content: "",
+                                line: "13"
+                            },
+                            {
+                                content: "",
+                                line: "18"
+                            },
+                            {
+                                content: "",
+                                line: "48"
+                            },
+                            {
+                                content: "",
+                                line: "84"
+                            }
+                        ],
+                        file: "Player.java",
+                        filePath: "Player.java"
+                    }
+                ]
+                for (let i = 0; i < testChangedFiles.length; i++) {
+                    if (currFile === testChangedFiles[i].file) {
+                        let additions = testChangedFiles[i].additions;
                         for (let i = 0; i < additions.length; i++) {
                             codemirror.getDoc().addLineClass(additions[i].line - 1, "background", CODE_ADDITION_CLASS);
                             let info = codemirror.getDoc().lineInfo(additions[i].line - 1);
@@ -263,6 +404,8 @@
                         }
                     }
                 }
+    
+                
             },
             makeMarker: function () {
                 let marker = document.createElement("div");

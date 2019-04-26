@@ -2,8 +2,8 @@
     <div class="create-review">
         <sui-grid :columns="16" stackable>
             <sui-grid-row stretched>
-                <sui-grid-column :width="2"></sui-grid-column>
-                <sui-grid-column :width="11">
+                <sui-grid-column :width="3"></sui-grid-column>
+                <sui-grid-column :width="7">
                     <sui-header size="huge">
                         {{ repoTitle }}
                         <sui-header-subheader>
@@ -15,15 +15,15 @@
                     </sui-header>
 
                 </sui-grid-column>
-                <sui-grid-column :width="1">
+                <sui-grid-column :width="6">
                     <sui-icon :class="['help-icon', { hidden: hideHelp }]" name="question circle" size="big" color="blue" fitted
                               @click="toggleHelp"></sui-icon>
                 </sui-grid-column>
                 <sui-grid-column :width="2"></sui-grid-column>
             </sui-grid-row>
             <sui-grid-row stretched>
-                <sui-grid-column :width="2"></sui-grid-column>
-                <sui-grid-column :width="12">
+                <sui-grid-column :width="3"></sui-grid-column>
+                <sui-grid-column :width="10">
                     <div class="create-review-nav">
                         <sui-menu pointing secondary>
                             <a is="sui-menu-item"

@@ -2,41 +2,41 @@
     <div class="dashboard">
         <sui-grid :columns="16" stackable>
             <sui-grid-row stretched>
-                <sui-grid-column :width="2"></sui-grid-column>
-                <sui-grid-column :width="12">
+                <sui-grid-column :width="4"></sui-grid-column>
+                <sui-grid-column :width="10">
                     <sui-header>
                         Willkommen zurück, {{ username }}!
                     </sui-header>
                 </sui-grid-column>
-                <sui-grid-column :width="2"></sui-grid-column>
+                <sui-grid-column :width="4"></sui-grid-column>
             </sui-grid-row>
             <sui-grid-row stretched>
-                <sui-grid-column :width="2"></sui-grid-column>
-                <sui-grid-column :width="12">
+                <sui-grid-column :width="4"></sui-grid-column>
+                <sui-grid-column :width="10">
                     <sui-message
                             :class="{ successNotActive: hideSuccessMessage}"
                             :header="successMessage"
                     ></sui-message>
                 </sui-grid-column>
-                <sui-grid-column :width="2"></sui-grid-column>
+                <sui-grid-column :width="4"></sui-grid-column>
             </sui-grid-row>
             <sui-grid-row stretched>
-                <sui-grid-column :width="2"></sui-grid-column>
-                <sui-grid-column :width="11">
+                <sui-grid-column :width="4"></sui-grid-column>
+                <sui-grid-column :width="4">
                     <sui-header size="huge">Dein Dashboard</sui-header>
                 </sui-grid-column>
-                <sui-grid-column :width="1">
+                <sui-grid-column :width="8">
                     <sui-icon class="help-icon" name="question circle" size="big" color="blue" fitted
                               @click="toggleHelp"></sui-icon>
                 </sui-grid-column>
             </sui-grid-row>
             <sui-grid-row stretched>
-                <sui-grid-column :width="2"></sui-grid-column>
-                <sui-grid-column :width="3">
+                <sui-grid-column :width="4"></sui-grid-column>
+                <sui-grid-column :width="2">
                     <dashboard-nav></dashboard-nav>
 
                 </sui-grid-column>
-                <sui-grid-column :width="9">
+                <sui-grid-column :width="6">
                     <div v-if="reposNotLoaded">
                         <sui-message
                                 icon="circle notched loading black"
@@ -139,19 +139,14 @@
                         Dein Projekt wird einem anderen Nutzer zugewiesen, der dein Projekt zum Reviewen erhält. Den aktuellen Status kannst du jederzeit bei deinen freigegebenen Projekten unter "Status" einsehen.</p>
                 </sui-segment>
                 <sui-segment vertical :padded="true">
-                    <sui-header>Wie kann ich mein Projekt an meine Kommilitonen schicken?</sui-header>
-                    <p>
-                        Dazu gehst du auf den Reiter "Noch nicht freigegeben" und wählst das gewünschte Projekt aus, indem du auf "Freigeben" klickst.</p>
+                    <sui-header>Wie funktioniert die Zuweisung des Projekts?</sui-header>
+                    <p>Sobald du dein Projekt freigegeben hast, wird überprüft welche Nutzer dasselbe Projekt freigegeben haben.
+                    Danach wird daraus ein Reviewer für dich vom System ermittelt.</p>
                 </sui-segment>
                 <sui-segment vertical :padded="true">
-                    <sui-header>Was passiert nachdem ich mein Projekt freigegeben habe?</sui-header>
+                    <sui-header>Kann ich Projekte von meinen Freunden reviewen?</sui-header>
                     <p>
-                        Dein Projekt wird einem anderen Nutzer zugewiesen, der dein Projekt zum Reviewen erhält. Den aktuellen Status kannst du jederzeit bei deinen freigegebenen Projekten unter "Status" einsehen.</p>
-                </sui-segment>
-                <sui-segment vertical :padded="true">
-                    <sui-header>Was passiert nachdem ich mein Projekt freigegeben habe?</sui-header>
-                    <p>
-                        Dein Projekt wird einem anderen Nutzer zugewiesen, der dein Projekt zum Reviewen erhält. Den aktuellen Status kannst du jederzeit bei deinen freigegebenen Projekten unter "Status" einsehen.</p>
+                       Leider nein. Da alle Nutzer anonym sind, ist dies nicht möglich.</p>
                 </sui-segment>
             </sui-modal-content>
             <sui-modal-actions>
