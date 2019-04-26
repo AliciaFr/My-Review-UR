@@ -2,13 +2,6 @@
     <div class="dashboard">
         <sui-grid :columns="16" stackable>
             <sui-grid-row stretched>
-                <sui-grid-column :width="1"></sui-grid-column>
-                <sui-grid-column centered :width="14">
-                   <img src="../assets/logo-my-review.png" class="logo">
-                </sui-grid-column>
-                <sui-grid-column :width="1"></sui-grid-column>
-            </sui-grid-row>
-            <sui-grid-row stretched>
                 <sui-grid-column :width="2"></sui-grid-column>
                 <sui-grid-column :width="12">
                     <sui-header>
@@ -44,11 +37,19 @@
 
                 </sui-grid-column>
                 <sui-grid-column :width="9">
-                    <div v-if="repos.length < 1">
+                    <div v-if="reposNotLoaded">
                         <sui-message
                                 icon="circle notched loading black"
                                 header="Einen Moment bitte"
                                 content="Der Inhalt wird gerade geladen."
+                        >
+                        </sui-message>
+                    </div>
+                    <div v-else-if="noRepos">
+                        <sui-message
+
+                                header="Du hast noch keine Projekte"
+                                content="Falls du denkst, dass es sich um einen Irrtum handelt, kontaktiere bitte den Support."
                         >
                         </sui-message>
                     </div>
@@ -105,13 +106,13 @@
                             <sui-step
                                     :class="stateCompleted"
                                     title="Review erstellen"
-                                    description="Dein Projekt wurde bewertet."
+                                    description="Dein Projekt wird von einem anderen Nutzer bewertet."
                                     icon="sync alternate">
                             </sui-step>
                             <sui-step
                                     :class="stateReviewRated"
                                     title="Bewertung des Reviews"
-                                    description="Bewerte dein erhaltenes Review"
+                                    description="Bewerte dein erhaltenes Review."
                                     icon="sync alternate">
                             </sui-step>
                         </sui-step-group>
@@ -180,6 +181,7 @@
 
 
     export default {
+        name: 'dashboard',
         props: {},
         data: function () {
             return {
@@ -201,7 +203,10 @@
                 stateReviewRated: 'disabled',
                 successMessage: 'Dein Projekt wurde erfolgreich freigegeben.',
                 hideSuccessMessage: true,
-                username: myLocalStorageHelper.getUsername()
+                username: myLocalStorageHelper.getUsername(),
+                gitHubLogin: myLocalStorageHelper.getGitHubLogin(),
+                noRepos: false,
+                reposNotLoaded: true
             };
         },
         components: {
@@ -210,38 +215,81 @@
         mounted: function () {
             let self = this;
             this.uid = myLocalStorageHelper.getUserId();
-            let myRepoFetcherTask = new RepositoriesFetcherTask(firebaseHelper, octokitHelper, self.uid, function (repos) {
-                self.repos = repos;
+            firebaseHelper.fetchUserRepos(firebaseHelper, octokitHelper, self.uid, function (repos) {
+                console.log(repos);
+                let currRepos = repos;
+                if (self.hasNoRepos(currRepos)) {
+                    self.handleNoRepos();
+                    self.reposNotLoaded = false;
+                } else {
+                    self.repos = currRepos;
+                    self.reposNotLoaded = false;
+                }
             });
-            myRepoFetcherTask.run();
             EventBus.$on('onDashboardItemClick', category => {
                 let self = this;
                 switch (category) {
                     case 'not published':
-                        this.setButton('Freigeben', 'add');
-                        this.setRepos(myRepoFetcherTask.unpublishedRepos);
+                        self.resetCards();
+                        console.log(this.reposNotLoaded);
+                        firebaseHelper.fetchUserRepos(firebaseHelper, octokitHelper, self.uid, function (repos) {
+                            if (self.hasNoRepos(repos)) {
+                                self.handleNoRepos();
+                                self.reposNotLoaded = false;
+                            } else {
+                                self.setRepos(repos);
+                                self.setButton('Freigeben', 'add');
+                                self.reposNotLoaded = false;
+                            }
+                        });
                         break;
                     case 'published':
-                        this.setButton('Status', 'eye');
-                        this.setRepos(myRepoFetcherTask.currentFirebaseRepos);
+                        self.resetCards();
+                        firebaseHelper.getUserRepos(self.uid, function (repos) {
+                            console.log(repos);
+                            if (self.hasNoRepos(repos)) {
+                                self.handleNoRepos();
+                                self.reposNotLoaded = false;
+                            } else {
+                                self.repos = repos;
+                                self.setButton('Status', 'eye');
+                                self.reposNotLoaded = false;
+                            }
+                        });
                         break;
                     case 'not reviewed':
+                        self.resetCards();
                         firebaseHelper.getAssignedReviews(self.uid, function (reviews) {
-                            self.setRepos(reviews);
+                            if (self.hasNoRepos(reviews)) {
+                                self.handleNoRepos();
+                                self.reposNotLoaded = false;
+                            } else {
+                                self.setRepos(reviews);
+                                self.setButton('Review erstellen', 'add');
+                                self.reposNotLoaded = false;
+                            }
                         });
-                        this.setButton('Review erstellen', 'add');
                         break;
                     case 'reviewed':
+                        self.resetCards();
                         firebaseHelper.getCompletedReviewsFromUser(self.uid, function (reviews) {
-                            self.repos = reviews;
+                            if (self.hasNoRepos(reviews)) {
+                                self.handleNoRepos();
+                                self.reposNotLoaded = false;
+                            } else {
+                                self.setRepos(reviews);
+                                self.setButton('Review ansehen', 'eye');
+                                self.reposNotLoaded = false;
+                            }
                         });
-                        this.setButton('Review ansehen', 'eye');
+
                         break;
                 }
             });
         },
         created() {
             this.onProjectShared();
+            this.onProjectReviewed();
         },
         computed: {},
         methods: {
@@ -258,17 +306,23 @@
                         this.toggleRepoStatus(item.name);
                         break;
                     case 'Review erstellen':
-                        firebaseHelper.getUid(this.currUserName).then(function (uid) {
-                            octokitHelper.getMasterBranchSha(self.currRepoName, function (sha) {
-                                firebaseHelper.setReviewBranchSha(self.currRepoName, uid, myLocalStorageHelper.getUserId(), sha);
-                                self.$router.replace({
-                                    name: 'createReview', params: {
-                                        repoTitle: self.currRepoName,
-                                        repoAuthor: self.currUserName,
-                                        reviewerAvatar: item.profilePicture,
-                                        prevRoute: 'dashboard',
-                                        branchSha: sha
-                                    }
+                        firebaseHelper.getUid(item.userName).then(function (uid) {
+                            firebaseHelper.getGitHubLogin(uid).then(function (gitHubLogin) {
+                                console.log(gitHubLogin);
+                                let completeRepoName = self.currRepoName + '-' + gitHubLogin;
+                                octokitHelper.getMasterBranchSha(completeRepoName, function (sha) {
+                                    firebaseHelper.setReviewBranchSha(self.currRepoName, uid, myLocalStorageHelper.getUserId(), sha);
+                                    self.$router.replace({
+                                        name: 'createReview', params: {
+                                            repoTitle: self.currRepoName,
+                                            repoAuthor: self.currUserName,
+                                            repoAuthorId: uid,
+                                            reviewerAvatar: item.profilePicture,
+                                            prevRoute: 'dashboard',
+                                            branchSha: sha,
+                                            authorGitHubLogin: gitHubLogin
+                                        }
+                                    });
                                 });
                             });
                         });
@@ -300,8 +354,6 @@
                 let self = this;
                 this.openRepoStatus = !this.openRepoStatus;
                 firebaseHelper.checkRepoForStatus(this.uid, repoName, firebaseHelper, function (status) {
-                    console.log('Hello');
-
                     self.setRepoStatus(status);
                 });
             },
@@ -334,7 +386,8 @@
             },
             publishRepo(repo) {
                 let self = this;
-                octokitHelper.isSubmitted(repo, function (isSubmitted) {
+                let completeRepoName = repo + '-' + this.gitHubLogin;
+                octokitHelper.isSubmitted(completeRepoName, function (isSubmitted) {
                     if (isSubmitted) {
                         self.$router.replace({
                             name: 'publishRepo', params: {
@@ -348,13 +401,13 @@
                 });
             },
             onProjectShared () {
-                EventBus.$on('onProjectShared',() =>{
+                EventBus.$on('onProjectShared', () => {
                     this.controllSuccessMessage();
                     this.successMessage = SUCCESS_MESSAGE_SHARED;
                 });
             },
             onProjectReviewed () {
-                EventBus.$on('onProjectReviewed',() =>{
+                EventBus.$on('onProjectReviewed', () => {
                     this.controllSuccessMessage();
                     this.successMessage = SUCCESS_MESSAGE_REVIEWED;
                 });
@@ -364,6 +417,17 @@
                 setTimeout(() => {
                     this.hideSuccessMessage = true;
                 }, 3000);
+            },
+            hasNoRepos (repos) {
+                return repos.length < 1;
+            },
+            handleNoRepos () {
+                this.noRepos = !this.noRepos;
+            },
+            resetCards () {
+                this.repos = [];
+                this.reposNotLoaded = true;
+                this.noRepos = false;
             }
         },
         mixins: [dashboardMixin]

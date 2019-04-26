@@ -5,6 +5,7 @@
 const UID = 'uid';
 const GITHUB_LOGIN = 'gitHubLogin';
 const USERNAME = 'username';
+const PROFILE_PICTURE = 'profilePicture';
 const ALL_FILES = 'allFiles';
 const FILE = 'file';
 const COMMIT_DIFF = 'commitDiff';
@@ -25,6 +26,14 @@ LocalStorageHelper.prototype.addUsername = function (username) {
 
 LocalStorageHelper.prototype.getUsername = function () {
     return localStorage.getItem(USERNAME);
+};
+
+LocalStorageHelper.prototype.addProfilePicture = function (profilePicture) {
+    localStorage.setItem(PROFILE_PICTURE, profilePicture);
+};
+
+LocalStorageHelper.prototype.getProfilePicture = function () {
+    return localStorage.getItem(PROFILE_PICTURE);
 };
 
 LocalStorageHelper.prototype.addGitHubLogin = function (gitHubLogin) {

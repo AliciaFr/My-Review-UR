@@ -3,8 +3,13 @@
  */
 
 import _ from 'underscore';
+import LocalStorageHelper from '../LocalStorageHelper';
 
-let that;
+let that,
+    localStorageHelper = new LocalStorageHelper(),
+    gitHubLogin = localStorageHelper.getGitHubLogin(),
+    username = localStorageHelper.getUsername(),
+    profilePicture = localStorageHelper.getProfilePicture();
 
 function RepositoryFetcherTask(firebaseHelper, octokitHelper, uid, callback) {
     this.callback = callback;
@@ -19,23 +24,8 @@ RepositoryFetcherTask.prototype.run = function () {
 
 RepositoryFetcherTask.prototype.onFirebaseReposAvailable = function (repos) {
     that = this;
-    for (let i = 0; i < repos.length; i++) {
-        that.firebaseHelper.getProfilePicture(that.uid, function (imgUrl) {
-            repos[i].profilePicture = imgUrl;
-        });
-    }
     that.currentFirebaseRepos = repos;
-    this.firebaseHelper.getUserName(this.uid).then(this.onUserNameAvailable);
-};
-
-RepositoryFetcherTask.prototype.onUserNameAvailable = function (username) {
-    that.username = username;
-    that.firebaseHelper.getGitHubLogin(that.uid).then(that.onGitHubLoginAvailable);
-};
-
-RepositoryFetcherTask.prototype.onGitHubLoginAvailable = function (gitHubLogin) {
-    that.gitHubLogin = gitHubLogin;
-    that.octokitHelper.getUserRepos(that.gitHubLogin, that.username, that.onGitHubReposAvailable);
+    that.octokitHelper.getUserRepos(gitHubLogin, username, that.onGitHubReposAvailable);
 };
 
 RepositoryFetcherTask.prototype.onGitHubReposAvailable = function (repos) {
@@ -47,22 +37,19 @@ RepositoryFetcherTask.prototype.onGitHubReposAvailable = function (repos) {
 RepositoryFetcherTask.prototype.mergeRepositories = function () {
     let result = [];
     that.unpublishedRepos = [];
-    if (that.currentFirebaseRepos.length === 0) {
+    if (that.currentFirebaseRepos.length < 1) {
         that.unpublishedRepos = that.currentGitHubRepos;
     } else {
         let pluckGitHubRepos = _.pluck(that.currentGitHubRepos, 'name');
         let pluckFirebaseRepos = _.pluck(that.currentFirebaseRepos, 'name');
         result = _.difference(pluckGitHubRepos, pluckFirebaseRepos);
         for (let i = 0; i < result.length; i++) {
-            that.firebaseHelper.getUid(that.username).then(function (uid) {
-                that.firebaseHelper.getProfilePicture(uid, function (imgUrl) {
-                    that.unpublishedRepos.push({
-                        name: result[i],
-                        userName: that.username,
-                        profilePicture: imgUrl
-                    });
-                });
+            that.unpublishedRepos.push({
+                name: result[i],
+                userName: username,
+                profilePicture: profilePicture
             });
+
         }
     }
     that.callback(that.unpublishedRepos);

@@ -20,33 +20,36 @@
                     <sui-header>Hast du an alles gedacht?</sui-header>
                     <sui-form>
                         <sui-form-fields grouped>
-                            <label inverted>How often do you use checkboxes?</label>
+                            <label>Performance</label>
                             <sui-form-field>
-                                <sui-checkbox label="Once a week"></sui-checkbox>
+                                <sui-checkbox label="Speicherplatz"></sui-checkbox>
                             </sui-form-field>
                             <sui-form-field>
-                                <sui-checkbox label="Once a week"></sui-checkbox>
+                                <sui-checkbox label="Duplikate"></sui-checkbox>
                             </sui-form-field>
                             <sui-form-field>
-                                <sui-checkbox label="Once a week"></sui-checkbox>
+                                <sui-checkbox label="Coding Konventionen"></sui-checkbox>
                             </sui-form-field>
                             <sui-form-field>
-                                <sui-checkbox label="Once a week"></sui-checkbox>
-                            </sui-form-field>
-                        </sui-form-fields>
-                        <sui-form-fields grouped>
-                            <label>How often do you use checkboxes?</label>
-                            <sui-form-field>
-                                <sui-checkbox label="Once a week"></sui-checkbox>
+                                <sui-checkbox label="Sinnvolle Bezeichner"></sui-checkbox>
                             </sui-form-field>
                             <sui-form-field>
-                                <sui-checkbox label="Once a week"></sui-checkbox>
+                                <sui-checkbox label="Architektur"></sui-checkbox>
                             </sui-form-field>
                             <sui-form-field>
-                                <sui-checkbox label="Once a week"></sui-checkbox>
+                                <sui-checkbox label="Documentation"></sui-checkbox>
                             </sui-form-field>
                             <sui-form-field>
-                                <sui-checkbox label="Once a week"></sui-checkbox>
+                                <sui-checkbox label="Performanz"></sui-checkbox>
+                            </sui-form-field>
+                            <sui-form-field>
+                                <sui-checkbox label="Logische Fehler"></sui-checkbox>
+                            </sui-form-field>
+                            <sui-form-field>
+                                <sui-checkbox label="Wartbarkeit"></sui-checkbox>
+                            </sui-form-field>
+                            <sui-form-field>
+                                <sui-checkbox label="Coding Best Practices"></sui-checkbox>
                             </sui-form-field>
                         </sui-form-fields>
                     </sui-form>
@@ -92,11 +95,14 @@
     import _ from 'underscore';
     import CodeMirror from 'codemirror';
 
+    import 'codemirror/lib/codemirror.css';
     import 'codemirror/mode/javascript/javascript.js';
+    import 'codemirror/mode/clike/clike.js';
     import 'codemirror/mode/htmlmixed/htmlmixed';
     import 'codemirror/mode/css/css';
     import 'codemirror/theme/idea.css';
-    import 'codemirror/lib/codemirror.css';
+    import 'codemirror/theme/base16-light.css';
+    import 'codemirror/theme/neo.css';
 
     const CODE_ADDITION_LINE_NUMBER_COLOR = "#156615",
         CODE_ADDITION_CLASS = "styled-background";
@@ -104,7 +110,8 @@
     let octokitHelper = new OctokitHelper(),
         localStorageHelper = new LocalStorageHelper(),
         myFileFetcherTask,
-        codemirror;
+        codemirror,
+        codemirrorHelper = new CodeMirrorHelper();
 
     export default {
         props: {
@@ -129,6 +136,7 @@
                 filePath: '',
                 repoName: this.completeRepoName,
                 cmOption: {
+                    addModeClass: true,
                     tabSize: 4,
                     styleActiveLine: {nonEmpty: true},
                     styleActiveSelected: true,
@@ -138,7 +146,7 @@
                     styleSelectedText: true,
                     matchBrackets: true,
                     showCursorWhenSelecting: true,
-                    theme: "idea",
+                    theme: "neo",
                     extraKeys: {"Ctrl": "autocomplete"},
                     hintOptions: {
                         completeSingle: false
@@ -153,9 +161,10 @@
             if (this.prevRoute === 'reviews') {
                 this.cmOption.readOnly = 'nocursor';
                 this.getDifference();
-                this.createChangedFilePath(localStorageHelper.getCommitDiff());
+                this.getTreeForReviewReader();
+            } else {
+                this.getTreeForReviewer();
             }
-            this.getTree();
             this.initCodeMirror();
             this.handleOnFileClicked();
 
@@ -181,48 +190,19 @@
             initCodeMirror: function () {
                 codemirror = new CodeMirror(this.$refs.codeEditor, this.cmOption);
             },
-            getTree: function () {
+            getTreeForReviewer: function () {
                 let self = this;
                 let myRepoTreeFetcherTask = new RepoTreeFetcherTask(self.completeRepoName, self.branchSha, octokitHelper, function (tree) {
                     self.files = tree;
-                    if (self.changedFilePath.length > 0) {
-                        for (let key in tree) {
-                            if (tree.hasOwnProperty(key)) {
-                                getObject(tree[key]);
-                                function getObject(obj, fileName) {
-                                    console.log(fileName);
-                                    let result = null;
-                                    if (obj instanceof Array) {
-                                        for (let i = 0; i < obj.length; i++) {
-                                            result = getObject(obj[i]);
-                                            if (result) {
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    else {
-                                        for (var prop in obj) {
-                                            if (prop === 'name') {
-                                                if (obj[prop] === fileName) {
-                                                    obj.changed = true;
-                                                }
-                                            }
-                                            if (obj[prop] instanceof Object || obj[prop] instanceof Array) {
-                                                result = getObject(obj[prop]);
-                                                if (result) {
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                        }
-
-                    }
                 });
                 myRepoTreeFetcherTask.run();
+            },
+            getTreeForReviewReader: function () {
+                let self = this;
+                console.log(this.beforeReviewSha);
+                octokitHelper.getRepoTreeWithMarkedChanges(this.completeRepoName, this.beforeReviewSha, this.branchSha, function (tree) {
+                    self.files = tree;
+                });
             },
             toggleMenu: function (event) {
                 event.cancelBubble = true;
@@ -245,13 +225,16 @@
                 let self = this;
                 EventBus.$on('onFileClick', fileInfo => {
                     let changedFiles = localStorageHelper.getCommitDiff();
+                    console.log(changedFiles);
+                    codemirror.setOption("mode", codemirrorHelper.switchMode(fileInfo.name));
+                    console.log(codemirror.mode);
                     myFileFetcherTask = new FileFetcherTask(octokitHelper, self.repoName, fileInfo.sha, function (file) {
                         if (localStorageHelper.getFile(fileInfo.name) !== null) {
                             codemirror.setValue(localStorageHelper.getFile(fileInfo.name).content);
                         } else {
                             codemirror.setValue(file);
                         }
-                        if (self.prevRoute === "reviews" && changedFiles !== null) {
+                        if (self.prevRoute === "reviews") {
                             self.markChangedLines(changedFiles, fileInfo.name);
                         }
                     });
@@ -260,7 +243,10 @@
                 });
             },
             getDifference: function () {
-                octokitHelper.getCommitDiff(this.repoName, this.beforeReviewSha, this.branchSha, function (changedFiles) {
+                let completeRepoName = this.repoName;
+                console.log(completeRepoName);
+                octokitHelper.getCommitDiff(completeRepoName,'20021e233f33f44b317720abf4267650d2da78b9', '30f347b96ff1ec23b05fa8d135114e5ea79c6745', function (changedFiles) {
+                    console.log(changedFiles);
                     localStorageHelper.addCommitDiff(changedFiles);
                 });
 
@@ -288,17 +274,6 @@
                 marker.style.textAlign = "center";
                 marker.innerHTML = "+";
                 return marker;
-            },
-            createChangedFilePath: function (changedFiles) {
-                let allSplittedPaths = [];
-                for (let i = 0; i < changedFiles.length; i++) {
-                    let singleSplittedPaths = changedFiles[i].filePath.replace(/^\/|\/$/g, "").split('/');
-                    for (let i = 0; i < singleSplittedPaths.length; i++) {
-                        allSplittedPaths.push(singleSplittedPaths[i]);
-                    }
-                }
-                console.log(this.changedFilePath);
-                this.changedFilePath = _.uniq(allSplittedPaths);
             }
         },
     }

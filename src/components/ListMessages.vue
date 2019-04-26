@@ -18,7 +18,6 @@
                             <single-message></single-message>
                             <single-message></single-message>
                         </sui-segment>
-                        <messenger></messenger>
                     </sui-grid-column>
                     <sui-grid-column :width="3"></sui-grid-column>
                 </sui-grid-row>

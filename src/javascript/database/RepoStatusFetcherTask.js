@@ -25,6 +25,8 @@ RepoStatusFetcherTask.prototype.getRepoId = function(repoName, repoOwner, callba
             snap.forEach(function (child) {
                 if (repoName === child.val().name && repoOwner === child.val().owner) {
                     callback(child.key);
+                } else {
+                    that.callback("not assigned");
                 }
             });
         });

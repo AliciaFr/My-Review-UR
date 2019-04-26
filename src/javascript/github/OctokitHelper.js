@@ -59,6 +59,18 @@ function getTree(octokit, repo, treeSha, callback) {
     });
 }
 
+OctokitHelper.prototype.getRepoTreeWithMarkedChanges = function (repoName, reviewSha, completedReviewSha, callback) {
+    let that = this;
+    this.getCommitDiff(repoName, reviewSha, completedReviewSha, function (changedFiles) {
+        let changedPaths = createChangedFilePath(changedFiles);
+        getTree(that.octokit, repoName, completedReviewSha, function (tree) {
+            let markedTree = buildMarkedTree(tree, changedPaths);
+            callback(markedTree);
+        })
+
+    });
+};
+
 // Quelle: https://stackoverflow.com/questions/19531453/transform-file-directory-structure-into-tree-in-javascript
 function buildStructuredTree(tree) {
     let arr = [];
@@ -75,8 +87,7 @@ function buildStructuredTree(tree) {
             let node = {
                 name: splitpath[i],
                 type: 'directory',
-                path: obj.path,
-                changed: false
+                path: obj.path
             };
             if (i === splitpath.length - 1) {
                 node.sha = obj.sha;
@@ -90,6 +101,44 @@ function buildStructuredTree(tree) {
 
     arr.map(addnode);
     _.toArray(structuredTree);
+    return structuredTree;
+}
+
+function buildMarkedTree(tree, changedPaths) {
+    let arr = [];
+    let structuredTree = {};
+
+    for (let i = 0; i < tree.length; i++) {
+        arr.push(tree[i]);
+    }
+
+    function addnode(obj) {
+        let splitpath = obj.path.replace(/^\/|\/$/g, "").split('/');
+        let pointer = structuredTree;
+        let changed;
+        //changed = _.contains(changedPaths, obj.path);
+
+        for (let i = 0; i < splitpath.length; i++) {
+            changed = _.contains(changedPaths, obj.path);
+            let node = {
+                name: splitpath[i],
+                type: 'directory',
+                path: obj.path,
+                changed: changed
+            };
+            if (i === splitpath.length - 1) {
+                node.sha = obj.sha;
+                node.type = obj.type;
+            }
+            pointer[splitpath[i]] = pointer[splitpath[i]] || node;
+            pointer[splitpath[i]].children = pointer[splitpath[i]].children || {};
+            pointer = pointer[splitpath[i]].children;
+        }
+    }
+
+    arr.map(addnode);
+    _.toArray(structuredTree);
+
     return structuredTree;
 }
 
@@ -122,6 +171,7 @@ OctokitHelper.prototype.createBranch = function (repo, reviewer, repoSha, edited
         ref: ref,
         sha: repoSha
     }).then(result => {
+        console.log(result);
         if (editedFiles !== null) {
             return myFunction(editedFiles, repo, reviewer);
         }
@@ -224,16 +274,18 @@ OctokitHelper.prototype.getCommitDiff = function (repoName, reviewSha, completed
         base: reviewSha,
         head: completedReviewSha
     }).then(result => {
-        console.log(result.data.files.length);
         let fileChanges = [],
             files = result.data.files;
+        console.log(files);
         for (let i = 0; i < files.length; i++) {
             let patch = files[i].patch;
+            console.log(patch);
             if (patch !== undefined) {
                 let lines = patch.match(/[\r\n].*/gm),
                     additions = [],
                     subtractions = [],
                     lineCounter = 0;
+                console.log(lines);
                 for (let i = 0; i < lines.length; i++) {
                     lineCounter++;
                     let addition = lines[i].match(/^\+.*/gm),
@@ -260,12 +312,21 @@ OctokitHelper.prototype.getCommitDiff = function (repoName, reviewSha, completed
                 });
             }
         }
+        console.log(fileChanges);
         callback(fileChanges);
     });
 };
 
-function getFileNameFromPath (path) {
+function getFileNameFromPath(path) {
     return path.split('/').pop();
+}
+
+function createChangedFilePath(changedFiles) {
+    let changedPaths = [];
+    for (let i = 0; i < changedFiles.length; i++) {
+        changedPaths.push(changedFiles[i].filePath);
+    }
+    return changedPaths;
 }
 
 export default OctokitHelper;

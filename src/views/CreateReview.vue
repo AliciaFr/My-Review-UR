@@ -44,6 +44,8 @@
                                    :repoName="repoTitle"
                                    :completeRepoName="completeRepoName"
                                    :repoAuthor="repoAuthor"
+                                   :repoAuthorId="repoAuthorId"
+                                   :authorGitHubLogin="authorGitHubLogin"
                                    :reviewer="reviewer"
                                    :beforeReviewSha="beforeReviewSha"
                                    :reviewId="reviewId">
@@ -86,25 +88,31 @@
                                 </sui-modal-description>
                             </sui-modal-content>
                             <sui-modal-actions>
-                                <sui-button positive @click.native="toggleWarning">
-                                    OK
-                                </sui-button>
+                                <sui-button positive @click.native="toggleWarning">OK</sui-button>
                             </sui-modal-actions>
                         </sui-modal>
-                        <sui-modal v-model="openHelp" animation="scale" :closable="true">
-                            <sui-modal-header>Wichtige Hinweise</sui-modal-header>
-                            <sui-modal-content>
+                        <sui-modal v-model="openHelp" animation="scale" dimmer="inverted" :closable="true">
+                            <sui-modal-header>Wichtiger Hinweis zur Erstellung von Reviews</sui-modal-header>
+                            <sui-modal-content  :scrolling="true">
                                 <sui-modal-description>
+                                    <sui-header>Wie gehe ich bei der Erstellung eines Reviews vor?</sui-header>
+                                    <span><p>Um einen Überblick zu bekommen, solltest du dir die zunächst Aufgabenstellung, Testing-Fehler, die der Autor des Codes angegeben hat und seine Erweiterungen der Aufgabenstellung durchlesen.</p>
+                                    <p>Dann solltest du dir einen groben Überblick über den Code verschaffen, indem du alle relevanten Dateien ansiehst.</p>
+                                    <p>Nun bist du bereit mit dem Erstellen des Reviews zu beginnen.</p></span>
                                     <sui-header>Wie erstelle ich ein Review?</sui-header>
-                                    <p>Du musst erst Kommentare hinzufügen, bevor du dein Review abschicken kannst.</p>
+                                    <sui-message warning icon="warning circle">
+                                        <sui-message-header>Achtung!</sui-message-header>
+                                        <sui-message-content>
+                                            Bitte lösche oder verändere den Code nicht, sondern kommentiere deine Anmerkungen stattdessen aus.
+                                        </sui-message-content>
+                                    </sui-message>
+                                    <p>Fällt dir im Code etwas auf, was du anmerken möchtest, kannst du dies durch einen Kommentar machen. (siehe Abbildung)</p>
+                                    <p>Damit du im Blick behälst, auf welche Aspekte du beim Erstellen des Reviews achten solltest, steht dir in dem Code-Editor im Menü rechts oben ein Checkliste zur Verfügung.</p>
+                                    <sui-image wrapped size="medium" src="public/src/assets/code-review-example.png"></sui-image>
                                 </sui-modal-description>
-                                <sui-message warning icon="warning circle">
-                                    <sui-message-header>Achtung!</sui-message-header>
-                                    <sui-message-content>
-                                        Bitte verändere nichts am Code, sondern kommentiere deine Anmerkungen stattdessen aus.
-                                    </sui-message-content>
-                                </sui-message>
-                            </sui-modal-content>
+
+                                </sui-modal-content>
+
                             <sui-modal-actions>
                                 <sui-button positive @click.native="toggleHelp">OK</sui-button>
                             </sui-modal-actions>
@@ -156,6 +164,7 @@
                 repoTitle: '',
                 completeRepoName: this.repoTitle,
                 repoAuthor: '',
+                repoAuthorId: '',
                 reviewerAvatar: '',
                 prevRoute: '',
                 forwardButton: 'Weiter zum Code',
@@ -163,20 +172,36 @@
                 reviewSha: '',
                 reviewId: '',
                 reviewer: '',
-                lastTab: false
+                lastTab: false,
+                authorGitHubLogin: ''
             };
         },
         created() {
-            this.repoTitle = this.$route.params.repoTitle;
-            this.repoAuthor = this.$route.params.repoAuthor;
-            console.log(this.repoAuthor);
-            this.reviewerAvatar = this.$route.params.reviewerAvatar;
-            this.prevRoute = this.$route.params.prevRoute;
-            this.branchSha = this.$route.params.branchSha;
-            this.completeRepoName = this.repoTitle + '-' + localStorageHelper.getGitHubLogin();
-
-
+            this.setData();
             if (this.prevRoute === 'reviews') {
+                this.setupReviewView();
+            } else if (this.prevRoute === 'dashboard') {
+                for (let i = 0; i < this.tabs.length; i++) {
+                    if (this.tabs[i].title === 'Bewertung des Reviews') {
+                        this.tabs.pop();
+                    }
+                }
+                this.setBackButtonTitle('Abbrechen');
+                this.reviewer = localStorageHelper.getUserId();
+            }
+        },
+        methods: {
+            setData () {
+                this.repoTitle = this.$route.params.repoTitle;
+                this.repoAuthor = this.$route.params.repoAuthor;
+                this.repoAuthorId = this.$route.params.repoAuthorId;
+                this.authorGitHubLogin = this.$route.params.authorGitHubLogin;
+                this.reviewerAvatar = this.$route.params.reviewerAvatar;
+                this.prevRoute = this.$route.params.prevRoute;
+                this.branchSha = this.$route.params.branchSha;
+                this.completeRepoName = this.repoTitle + '-' + this.authorGitHubLogin;
+            },
+            setupReviewView () {
                 this.setAvatar(localStorageHelper.getUserId());
                 this.openHelp = false;
                 this.hideHelp = true;
@@ -190,18 +215,8 @@
                         id: 3
                     });
                 }
-
                 this.setBackButtonTitle('Schließen');
-            } else if (this.prevRoute === 'dashboard') {
-                for (let i = 0; i < this.tabs.length; i++) {
-                    if (this.tabs[i].title === 'Bewertung des Reviews') {
-                        this.tabs.pop();
-                    }
-                }
-                this.setBackButtonTitle('Abbrechen');
-            }
-        },
-        methods: {
+            },
             toggleCancel() {
                 if (this.prevRoute === 'dashboard') {
                     this.openCancel = !this.openCancel;
@@ -218,16 +233,14 @@
             createReview: function () {
                 let self = this;
                 let editedFiles = localStorageHelper.getAllFiles();
-                let repo = this.repoTitle;
-                let repoOwner = this.repoAuthor;
-                let reviewer = localStorageHelper.getUserId();
                 if (editedFiles !== null) {
-                    myFirebaseHelper.getReviewBranchSha(repo, repoOwner, reviewer, function (reviewSha) {
-                        repoOwner = repoOwner.replace(/\s/g, '-');
+                    myFirebaseHelper.getReviewBranchSha(this.repoTitle, this.repoAuthorId, this.reviewer, function (reviewSha) {
+                        let repoOwner = self.repoAuthor.replace(/\s/g, '-');
+                        console.log(repoOwner);
                         let fullRepoName = self.repoTitle + '-' + localStorageHelper.getGitHubLogin();
                         octokitHelper.createBranch(fullRepoName, repoOwner, reviewSha, editedFiles);
                     });
-                    myFirebaseHelper.setReviewStatus(repo, repoOwner, "completed", self.getTodaysDate());
+                    myFirebaseHelper.setReviewStatus(this.repoTitle, this.repoAuthorId, "completed", self.getTodaysDate());
                     EventBus.$emit('onProjectReviewed', this.repoTitle);
                     self.goToHome();
                     localStorageHelper.deleteAllFiles();
@@ -259,6 +272,7 @@
                 this.backButton = buttonTitle;
             },
             handleForwardButton (buttonTitle) {
+                console.log(buttonTitle);
                 if (this.prevRoute === 'dashboard') {
                     if (buttonTitle === 'Weiter zum Code') {
                         this.changeTab(tabs[1]);

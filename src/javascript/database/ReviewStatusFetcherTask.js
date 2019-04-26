@@ -51,9 +51,11 @@ ReviewStatusFetcherTask.prototype.findUsernameForRepoAuthor = function (repos) {
     let resultPromises = [];
     let resultReviews = [];
     for (let i = 0; i < repos.length; i++) {
+        console.log(repos[i].author);
         resultPromises.push(that.getUserName(repos[i].author));
     }
     Promise.all(resultPromises).then(function (users) {
+        console.log(users);
         for (let i = 0; i < repos.length; i++) {
             repos[i].userName = users[i];
             resultReviews.push(repos[i]);

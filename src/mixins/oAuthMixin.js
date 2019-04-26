@@ -20,13 +20,15 @@ export default {
                 let uid = result.user.uid,
                     gitHubLogin = result.additionalUserInfo.username,
                     dbRef = database.ref("users/"),
-                    username = createUserName();
+                    username = createUserName(),
+                    profilePicture = createProfilePicture();
                 if (checkUser(dbRef, uid) === false) {
-                    databaseHelper.createAccount(dbRef, uid, username, createProfilePicture(), gitHubLogin);
+                    databaseHelper.createAccount(dbRef, uid, username, profilePicture, gitHubLogin);
                 }
                 myLocalStorageHelper.addUserId(uid);
                 myLocalStorageHelper.addGitHubLogin(gitHubLogin);
                 myLocalStorageHelper.addUsername(username);
+                myLocalStorageHelper.addProfilePicture(profilePicture);
                 this.$router.replace('home');
             }).catch((err) => {
                 alert('Oops. ' + err.message)

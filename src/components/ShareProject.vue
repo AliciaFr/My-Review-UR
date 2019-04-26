@@ -68,7 +68,9 @@
                 let self = this;
                 let uid = this.$route.params.uid;
                 firebaseHelper.getRepoId(self.repoTitle, uid).then(function (repoId) {
+                    console.log(repoId);
                     firebaseHelper.getRepoForAssigning(uid, self.repoTitle, function (repo) {
+                        console.log(repo);
                         firebaseHelper.setReview(repoId, repo.author, self.getTodaysDate());
                     });
                 });

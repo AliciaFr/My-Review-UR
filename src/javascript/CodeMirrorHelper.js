@@ -19,6 +19,9 @@ CodeMirrorHelper.prototype.switchMode = function (file) {
             return 'text/css';
         case 'php':
             return 'application/x-httpd-php';
+        case 'java':
+            return 'text/x-java';
+
         default:
             return 'text/javascript';
     }

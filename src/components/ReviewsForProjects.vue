@@ -69,7 +69,8 @@
                 let self = this;
                 let reviewer = review.reviewerName.replace(/\s/g, '-');
                 myOctokitHelper.getReviewBranchSha(review.repo, reviewer, function (branchSha) {
-                    self.setRouteParams(review, branchSha);
+                    //self.setRouteParams(review, branchSha);
+                    self.setRouteParams(review, '30f347b96ff1ec23b05fa8d135114e5ea79c6745');
                 });
 
             },
@@ -83,7 +84,6 @@
 
             },
             setRouteParams (review, branchSha) {
-                console.log(review);
                 this.$router.replace({
                     name: 'viewReview',
                     params: {
@@ -91,6 +91,8 @@
                         repoTitle: review.repo,
                         repoName: review.repo,
                         repoAuthor: myLocalStorageHelper.getUsername(),
+                        repoAuthorId: myLocalStorageHelper.getUserId(),
+                        authorGitHubLogin: myLocalStorageHelper.getGitHubLogin(),
                         reviewerId: review.reviewer,
                         reviewerName: review.reviewerName,
                         prevRoute: 'reviews',
