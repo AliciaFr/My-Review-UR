@@ -18,8 +18,8 @@ function OctokitHelper() {
     this.octokit = octokit;
     octokit.git.getTree({
         owner: ORGANIZATION,
-        repo: 'OOP-JumpAndRun-CrUR1',
-        tree_sha: 'refs/heads/uni-regensburg-review',
+        repo: 'OOP-JumpAndRun-AliciaFr',
+        tree_sha: 'master',
         recursive: 1
     }).then(result => {
         console.log(result.data);

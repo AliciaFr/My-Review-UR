@@ -111,9 +111,11 @@
                             </sui-step>
                             <sui-step
                                     :class="stateReviewRated"
+                                    id="rateReview"
                                     title="Bewertung des Reviews"
                                     description="Bewerte dein erhaltenes Review."
-                                    icon="sync alternate">
+                                    icon="sync alternate"
+                                    @click="goToReviews()">
                             </sui-step>
                         </sui-step-group>
                     </div>
@@ -348,6 +350,7 @@
             toggleRepoStatus(repoName) {
                 let self = this;
                 this.openRepoStatus = !this.openRepoStatus;
+                console.log(this.uid);
                 firebaseHelper.checkRepoForStatus(this.uid, repoName, firebaseHelper, function (status) {
                     self.setRepoStatus(status);
                 });
@@ -423,6 +426,11 @@
                 this.repos = [];
                 this.reposNotLoaded = true;
                 this.noRepos = false;
+            },
+            goToReviews () {
+                this.$router.replace({
+                            name: 'reviews'
+                        });
             }
         },
         mixins: [dashboardMixin]
@@ -441,6 +449,10 @@
 
     .repo-card-image {
         padding-bottom: 0.5em !important;
+    }
+    
+    #rateReview {
+        cursor: pointer;
     }
 
     .logo {

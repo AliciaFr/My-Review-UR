@@ -98,7 +98,7 @@
                                     <sui-header>Wie gehe ich bei der Erstellung eines Reviews vor?</sui-header>
                                     <span><p>Um einen Überblick zu bekommen, solltest du dir die zunächst Aufgabenstellung, Testing-Fehler, die der Autor des Codes angegeben hat und seine Erweiterungen der Aufgabenstellung durchlesen.</p>
                                     <p>Dann solltest du dir einen groben Überblick über den Code verschaffen, indem du alle relevanten Dateien ansiehst.</p>
-                                    <p>Nun bist du bereit mit dem Erstellen des Reviews zu beginnen.</p></span>
+                                    <p>Nun bist du bereit, um mit dem Erstellen des Reviews zu beginnen.</p></span>
                                     <sui-header>Wie erstelle ich ein Review?</sui-header>
                                     <sui-message warning icon="warning circle">
                                         <sui-message-header>Achtung!</sui-message-header>
@@ -108,7 +108,7 @@
                                     </sui-message>
                                     <p>Fällt dir im Code etwas auf, was du anmerken möchtest, kannst du dies durch einen Kommentar machen. (siehe Abbildung)</p>
                                     <p>Damit du im Blick behälst, auf welche Aspekte du beim Erstellen des Reviews achten solltest, steht dir in dem Code-Editor im Menü rechts oben ein Checkliste zur Verfügung.</p>
-                                    <sui-image wrapped size="medium" src="public/src/assets/code-review-example.png"></sui-image>
+                                    <img wrapped size="medium" src="../assets/code-review-example.png">
                                 </sui-modal-description>
 
                                 </sui-modal-content>

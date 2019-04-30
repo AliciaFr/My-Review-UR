@@ -15,7 +15,7 @@
         <sui-segment class="editor" attached="bottom" style="height: 500px; padding: 0">
 
             <sui-sidebar-pushable>
-                <sui-sidebar animation="overlay" width="very wide" class="navigation" :visible="visibleChecklist"
+                <sui-sidebar animation="push" width="very wide" class="navigation" :visible="visibleChecklist"
                              direction="right">
                     <sui-header>Hast du an alles gedacht?</sui-header>
                     <sui-form>
@@ -52,7 +52,7 @@
                 </sui-sidebar>
                 <sui-sidebar-pusher @click="visibleChecklist = false; checklistIsActive = false">
                     <sui-sidebar-pushable>
-                        <sui-sidebar animation="overlay" style="height: 500px!important;" width="wide"
+                        <sui-sidebar animation="push" width="wide"
                                      class="inverted navigation"
                                      :visible="visibleMenu">
                             <sui-header inverted>{{ repoTitle }}</sui-header>
@@ -65,8 +65,8 @@
                             </div>
                         </sui-sidebar>
                         <sui-sidebar-pusher @click="visibleMenu = false; menuIsActive = false">
-                            <div class="ui container">
-                                <div class="code-editor" ref="codeEditor" v-on:keyup="setLocalStorage()"></div>
+                            <div :class="{ ui: true, container: true, emptyEditor: isEmptyEditor }">
+                                <div :class="{emptyEditor: isEmptyEditor }" ref="codeEditor" v-on:keyup="setLocalStorage()"></div>
                             </div>
                         </sui-sidebar-pusher>
                     </sui-sidebar-pushable>
@@ -130,6 +130,7 @@
                 fileName: '',
                 fileSha: '',
                 filePath: '',
+                isEmptyEditor: false,
                 repoName: this.completeRepoName,
                 cmOption: {
                     addModeClass: true,
@@ -162,7 +163,11 @@
                 this.getTreeForReviewer();
             }
             this.initCodeMirror();
+            if (codemirror.getValue() === "") {
+                this.isEmptyEditor = true;
+            }
             this.handleOnFileClicked();
+            
 
         },
         components: {
@@ -201,11 +206,19 @@
                 });
             },
             toggleMenu: function (event) {
+                if (this.visibleChecklist === true) {
+                    this.visibleChecklist = false;
+                    this.checklistIsActive = false;
+                }
                 event.cancelBubble = true;
                 this.visibleMenu = !this.visibleMenu;
                 this.menuIsActive = !this.menuIsActive;
             },
             toggleChecklist: function () {
+            if (this.visibleMenu === true) {
+                    this.visibleMenu = false;
+                    this.menuIsActive = false;
+                }
                 event.cancelBubble = false;
                 this.visibleChecklist = !this.visibleChecklist;
                 this.checklistIsActive = !this.checklistIsActive;
@@ -218,6 +231,7 @@
                 }
             },
             handleOnFileClicked: function () {
+                this.isEmptyEditor = false;
                 let self = this;
                 EventBus.$on('onFileClick', fileInfo => {
                     let changedFiles = localStorageHelper.getCommitDiff();
@@ -236,6 +250,7 @@
                     });
                     myFileFetcherTask.run();
                     self.setData(fileInfo);
+                    this.menuIsActive = false;
                 });
             },
             getDifference: function () {
@@ -433,10 +448,6 @@
         padding-top: 1em;
     }
 
-    body ::-webkit-scrollbar {
-        height: 500px;
-    }
-
     body ::-webkit-scrollbar-track {
         background: white;
     }
@@ -444,6 +455,14 @@
     .CodeMirror {
         height: auto;
         width: 100%;
+    }
+    
+    .CodeMirror-scroll {
+        min-height: 500px;
+    }
+    
+    .emptyEditor {
+        height: 500px !important;
     }
 
     .hidden {
