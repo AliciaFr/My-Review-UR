@@ -52,6 +52,7 @@
         },
         mounted: function () {
             this.setProfilePicture();
+            console.log(this.$route);
         },
         methods: {
             logout: function () {

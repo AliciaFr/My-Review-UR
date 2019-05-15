@@ -16,26 +16,33 @@ let octokit = new Octokit({auth: 'token ' + '2983d2539996337ea1f69a320d2a60911bd
 
 function OctokitHelper() {
     this.octokit = octokit;
+    octokit.git.getTree({
+        owner: ORGANIZATION,
+        repo: 'OOP-JumpAndRun-AliciaFr',
+        tree_sha: 'master',
+        recursive: 1
+    }).then(result => {
+        console.log(result.data);
+    });
 }
 
 OctokitHelper.prototype.getUserRepos = function (gitHubLogin, username, callback) {
- // Creates task to get all repos from "organization" to which "user" has contributed
- // Last parameter is a callback function, called when task is completed
- let task = new UserRepositoriesFetcherTask(octokit, ORGANIZATION, gitHubLogin, function(repos) {
-     let userRepos = [];
-     for (let i = 0; i < repos.length; i++) {
-         let repoName = repos[i];
-         repoName = repoName.replace(gitHubLogin, '').slice(0, -1);
-         userRepos.push({
-             name: repoName,
-             userName: username
-         });
-     }
-    callback(userRepos);
- });
- task.run();
+    // Creates task to get all repos from "organization" to which "user" has contributed
+    // Last parameter is a callback function, called when task is completed
+    let task = new UserRepositoriesFetcherTask(octokit, ORGANIZATION, gitHubLogin, function (repos) {
+        let userRepos = [];
+        for (let i = 0; i < repos.length; i++) {
+            let repoName = repos[i];
+            repoName = repoName.replace(gitHubLogin, '').slice(0, -1);
+            userRepos.push({
+                name: repoName,
+                userName: username
+            });
+        }
+        callback(userRepos);
+    });
+    task.run();
 };
-
 
 
 /**
@@ -59,6 +66,18 @@ function getTree(octokit, repo, treeSha, callback) {
         callback(result.data.tree);
     });
 }
+
+OctokitHelper.prototype.getRepoTreeWithMarkedChanges = function (repoName, reviewSha, completedReviewSha, callback) {
+    let that = this;
+    this.getCommitDiff(repoName, reviewSha, completedReviewSha, function (changedFiles) {
+        let changedPaths = createChangedFilePath(changedFiles);
+        getTree(that.octokit, repoName, completedReviewSha, function (tree) {
+            let markedTree = buildMarkedTree(tree, changedPaths);
+            callback(markedTree);
+        })
+
+    });
+};
 
 // Quelle: https://stackoverflow.com/questions/19531453/transform-file-directory-structure-into-tree-in-javascript
 function buildStructuredTree(tree) {
@@ -93,6 +112,44 @@ function buildStructuredTree(tree) {
     return structuredTree;
 }
 
+function buildMarkedTree(tree, changedPaths) {
+    let arr = [];
+    let structuredTree = {};
+
+    for (let i = 0; i < tree.length; i++) {
+        arr.push(tree[i]);
+    }
+
+    function addnode(obj) {
+        let splitpath = obj.path.replace(/^\/|\/$/g, "").split('/');
+        let pointer = structuredTree;
+        let changed;
+        //changed = _.contains(changedPaths, obj.path);
+
+        for (let i = 0; i < splitpath.length; i++) {
+            changed = _.contains(changedPaths, obj.path);
+            let node = {
+                name: splitpath[i],
+                type: 'directory',
+                path: obj.path,
+                changed: changed
+            };
+            if (i === splitpath.length - 1) {
+                node.sha = obj.sha;
+                node.type = obj.type;
+            }
+            pointer[splitpath[i]] = pointer[splitpath[i]] || node;
+            pointer[splitpath[i]].children = pointer[splitpath[i]].children || {};
+            pointer = pointer[splitpath[i]].children;
+        }
+    }
+
+    arr.map(addnode);
+    _.toArray(structuredTree);
+
+    return structuredTree;
+}
+
 OctokitHelper.prototype.getFile = function (repo, sha, callback) {
     getBlob(this.octokit, repo, sha, function (blob) {
         let decodedFile = decodeBlob(blob);
@@ -122,6 +179,7 @@ OctokitHelper.prototype.createBranch = function (repo, reviewer, repoSha, edited
         ref: ref,
         sha: repoSha
     }).then(result => {
+        console.log(result);
         if (editedFiles !== null) {
             return myFunction(editedFiles, repo, reviewer);
         }
@@ -168,7 +226,7 @@ function getDeadline(repo, callback) {
     octokit.repos.getContents({
         owner: ORGANIZATION,
         repo: repo,
-        path: 'deadline.json'
+        path: 'config.json'
     }).then(result => {
         let deadlineFile = JSON.parse(Base64.decode(result.data.content));
         callback(deadlineFile.deadline);
@@ -202,7 +260,7 @@ OctokitHelper.prototype.getMasterBranchSha = function (repo, callback) {
         repo: repo,
         branch: 'master'
     }).then(result => {
-       callback(result.data.commit.sha);
+        callback(result.data.commit.sha);
     });
 };
 
@@ -217,6 +275,66 @@ OctokitHelper.prototype.getReviewBranchSha = function (repo, reviewerName, callb
 };
 
 /* compares the commit of the master branch with the commit of the review branch */
+OctokitHelper.prototype.getCommitDiff = function (repoName, reviewSha, completedReviewSha, callback) {
+    octokit.repos.compareCommits({
+        owner: ORGANIZATION,
+        repo: repoName,
+        base: reviewSha,
+        head: completedReviewSha
+    }).then(result => {
+        let fileChanges = [],
+            files = result.data.files;
+        console.log(files);
+        for (let i = 0; i < files.length; i++) {
+            let patch = files[i].patch;
+            console.log(patch);
+            if (patch !== undefined) {
+                let lines = patch.match(/[\r\n].*/gm),
+                    additions = [],
+                    subtractions = [],
+                    lineCounter = 0;
+                console.log(lines);
+                for (let i = 0; i < lines.length; i++) {
+                    lineCounter++;
+                    let addition = lines[i].match(/^\+.*/gm),
+                        subtraction = lines[i].match(/^-.*/gm);
+                    if (addition !== null) {
+                        additions.push({
+                            content: addition[0].replace(/^./g, ''),
+                            line: lineCounter
+                        });
+                    }
+                    if (subtraction !== null) {
+                        lineCounter--;
+                        subtractions.push({
+                            content: subtraction[0].replace(/^./g, ''),
+                            line: i
+                        });
+                    }
+                }
+                fileChanges.push({
+                    file: getFileNameFromPath(files[i].filename),
+                    filePath: files[i].filename,
+                    additions: additions,
+                    subtractions: subtractions
+                });
+            }
+        }
+        console.log(fileChanges);
+        callback(fileChanges);
+    });
+};
 
+function getFileNameFromPath(path) {
+    return path.split('/').pop();
+}
+
+function createChangedFilePath(changedFiles) {
+    let changedPaths = [];
+    for (let i = 0; i < changedFiles.length; i++) {
+        changedPaths.push(changedFiles[i].filePath);
+    }
+    return changedPaths;
+}
 
 export default OctokitHelper;

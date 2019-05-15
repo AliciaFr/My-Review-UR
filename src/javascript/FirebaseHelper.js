@@ -3,7 +3,9 @@
  */
 
 import firebase from 'firebase';
+import RepositoryFetcherTask from './github/RepositoryFetcherTask';
 import ReviewStatusFetcherTask from './database/ReviewStatusFetcherTask';
+import RepoStatusFetcherTask from './database/RepoStatusFetcherTask';
 import AssignRepoFetcherTask from './database/AssignRepoFetcherTask';
 import ReviewsForUserFetcherTask from './database/ReviewsForUserFetcherTask';
 
@@ -22,7 +24,13 @@ FirebaseHelper.prototype.createAccount = function (dbRef, uid, username, profile
 };
 
 FirebaseHelper.prototype.getUserRepos = function (uid, callback) {
+    let that = this;
     checkForUserRepos(uid, function (userRepos) {
+        that.getProfilePicture(uid, function (imgUrl) {
+           for (let i = 0; i < userRepos.length; i++) {
+               userRepos[i].profilePicture = imgUrl;
+           }
+        });
         callback(userRepos);
     });
 };
@@ -71,9 +79,12 @@ FirebaseHelper.prototype.getRepoStatus = function (repoId, callback) {
     reviewEntries.on('value', snap => {
         snap.forEach(function (child) {
             if (repoId === child.val().repo) {
-                callback(child.val().status);
-            } else {
-                callback('not published')
+                if (child.val().rating !== '') {
+                    callback('reviewRated');
+                } else {
+                    callback(child.val().status);
+
+                }
             }
         });
     });
@@ -105,8 +116,20 @@ FirebaseHelper.prototype.getReviewsForUser = function (uid) {
 };
 
 FirebaseHelper.prototype.getAssignedReviews = function (uid, callback) {
+    let that = this;
     let task = new ReviewStatusFetcherTask(uid, 'assigned', function (reviews) {
-        callback(reviews);
+        if (reviews.length > 0) {
+            for (let i = 0; i < reviews.length; i++) {
+                console.log(reviews[i]);
+                that.getProfilePicture(reviews[i].author, function (imgUrl) {
+                    reviews[i].profilePicture = imgUrl;
+                    callback(reviews);
+
+                });
+            }
+        } else {
+            callback(reviews);
+        }
     });
     task.run();
 };
@@ -124,10 +147,28 @@ FirebaseHelper.prototype.getReviewsForReviewer = function (uid, callback) {
     task.run();
 };
 
+FirebaseHelper.prototype.checkRepoForStatus = function (uid, repoName, firebaseHelper, callback) {
+    let task = new RepoStatusFetcherTask(repoName, uid, firebaseHelper, function (repo) {
+        callback(repo);
+    });
+    task.run();
+};
+
 /* Gets all Reviews with the status "completed" in which the current user is the reviewer of the assigned repository */
 FirebaseHelper.prototype.getCompletedReviewsFromUser = function (uid, callback) {
+    let that = this;
     let task = new ReviewStatusFetcherTask(uid, 'completed', function (reviews) {
-        callback(reviews);
+        if (reviews.length > 0) {
+            for (let i = 0; i < reviews.length; i++) {
+                that.getProfilePicture(reviews[i].author, function (imgUrl) {
+                    reviews[i].profilePicture = imgUrl;
+                    callback(reviews);
+
+                });
+            }
+        } else {
+            callback(reviews);
+        }
     });
     task.run();
 };
@@ -223,6 +264,24 @@ FirebaseHelper.prototype.getRepoForAssigning = function (uid, repoName, callback
     task.run();
 };
 
+FirebaseHelper.prototype.fetchUserRepos = function (firebaseHelper, octokitHelper, uid, callback) {
+    let self = this;
+    let myRepoFetcherTask = new RepositoryFetcherTask(firebaseHelper, octokitHelper, uid, function (repos) {
+        console.log(repos);
+        if (repos.length > 0) {
+            self.getProfilePicture(uid, function (imgUrl) {
+                for (let i = 0; i < repos.length; i++) {
+                    repos[i].profilePicture = imgUrl;
+                    callback(repos);
+                }
+            });
+        } else {
+            callback(repos);
+        }
+    });
+    myRepoFetcherTask.run();
+};
+
 FirebaseHelper.prototype.setReview = function (repoName, reviewerUid, assignDate) {
     let dbRef = firebase.database();
     let reviewEntries = dbRef.ref('reviews');
@@ -237,7 +296,7 @@ FirebaseHelper.prototype.setReview = function (repoName, reviewerUid, assignDate
     });
 };
 
-FirebaseHelper.prototype.setReviewBranchSha = function (repoName, repoOwnerId, reviewerUid, commitSha) {
+FirebaseHelper.prototype.setReviewBranchSha = function (repoName, repoOwnerId, reviewerUid, reviewSha) {
     let dbRef = firebase.database();
     let reviewEntries = dbRef.ref('reviews');
     let getRepoId = this.getRepoId(repoName, repoOwnerId);
@@ -245,9 +304,9 @@ FirebaseHelper.prototype.setReviewBranchSha = function (repoName, repoOwnerId, r
         reviewEntries.on('value', snap => {
             snap.forEach(function (child) {
                 if (repoId === child.val().repo && reviewerUid === child.val().reviewer) {
-                        reviewEntries.child(child.key).update({
-                            "commit_sha": commitSha
-                        });
+                    reviewEntries.child(child.key).update({
+                        "review_sha": reviewSha
+                    });
 
                 }
             });
@@ -256,31 +315,32 @@ FirebaseHelper.prototype.setReviewBranchSha = function (repoName, repoOwnerId, r
 };
 
 FirebaseHelper.prototype.getReviewBranchSha = function (repoName, repoOwner, reviewerUid, callback) {
+    console.log("Hello World");
     let self = this;
     let dbRef = firebase.database();
     let reviewEntries = dbRef.ref('reviews');
-    this.getUid(repoOwner).then(function (repoOwnerId) {
-        self.getRepoId(repoName, repoOwnerId).then(function (repoId) {
+
+        self.getRepoId(repoName, repoOwner).then(function (repoId) {
+            console.log(repoId);
             reviewEntries.on('value', snap => {
                 snap.forEach(function (child) {
                     if (repoId === child.val().repo && reviewerUid === child.val().reviewer) {
-                        callback(child.val().commit_sha);
+                        console.log(child.val().review_sha);
+                        callback(child.val().review_sha);
                     }
                 });
             });
         });
-    });
+
 };
 
-FirebaseHelper.prototype.setReviewStatus = function (repoName, repoOwner, status, date) {
+FirebaseHelper.prototype.setReviewStatus = function (repoName, repoAuthorId, status, date) {
     let self = this;
-    let getUid = this.getUid(repoOwner);
-    getUid.then(function (repoOwnerId) {
-        let getRepoId = self.getRepoId(repoName, repoOwnerId);
+    let getRepoId = self.getRepoId(repoName, repoAuthorId);
         getRepoId.then(function (repoId) {
             getReviewByRepoId(repoId, status, date);
         });
-    });
+
 };
 
 function getReviewByRepoId(repoId, status, date) {
@@ -290,7 +350,7 @@ function getReviewByRepoId(repoId, status, date) {
         snap.forEach(function (child) {
             if (repoId === child.val().repo) {
                 reviewEntries.child(child.key).update({
-                   'status': status,
+                    'status': status,
                     'reviewDate': date
                 });
             }

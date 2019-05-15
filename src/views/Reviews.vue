@@ -2,15 +2,15 @@
     <div class="reviews">
         <sui-grid :columns="16" stackable textAlign="left">
             <sui-grid-row>
-                <sui-grid-column :width="3"></sui-grid-column>
-                <sui-grid-column :width="10">
+                <sui-grid-column :width="4"></sui-grid-column>
+                <sui-grid-column :width="8">
                     <sui-header size="huge">Deine Bewertungen</sui-header>
                 </sui-grid-column>
-                <sui-grid-column :width="3"></sui-grid-column>
+                <sui-grid-column :width="4"></sui-grid-column>
             </sui-grid-row>
             <sui-grid-row stretched>
-                <sui-grid-column :width="3"></sui-grid-column>
-                <sui-grid-column :width="10">
+                <sui-grid-column :width="4"></sui-grid-column>
+                <sui-grid-column :width="8">
                     <div class="all-reviews-nav">
                         <sui-menu pointing secondary>
                             <a is="sui-menu-item"
@@ -29,7 +29,7 @@
                         </component>
                     </keep-alive>
                 </sui-grid-column>
-                <sui-grid-column :width="3"></sui-grid-column>
+                <sui-grid-column :width="4"></sui-grid-column>
             </sui-grid-row>
         </sui-grid>
     </div>
@@ -54,6 +54,11 @@
             return {
                 tabs: tabs,
                 currentTab: tabs[0]
+            }
+        },
+        mounted () {
+            if (this.$route.params.prevRoute === 'dashboard') {
+                this.currentTab = tabs[1];
             }
         },
         components: {

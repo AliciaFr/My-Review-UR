@@ -20,6 +20,7 @@
 <script>
     import FirebaseHelper from '../javascript/FirebaseHelper';
     import OctokitHelper from '../javascript/github/OctokitHelper';
+    import LocalStorageHelper from '../javascript/LocalStorageHelper';
 
     let myFirebaseHelper = new FirebaseHelper();
     let myOctokitHelper = new OctokitHelper();
@@ -27,23 +28,29 @@
     export default {
         props: {
             repoName: String,
-            repoAuthor: String
+            repoAuthor: String,
+            repoAuthorId: String,
+            authorGitHubLogin: String
         },
         data() {
             return {
                 taskDescription: '',
                 testingErrors: '',
-                noTestingErrors: 'Die Anwendung funktioniert fehlerfrei./Es wurden keine Testing-Fehler gefunden.',
+                noTestingErrors: 'Es wurden keine Testing-Fehler gefunden.',
                 extensions: '',
                 noExtensions: 'Es wurden keine Erweiterungen implementiert.'
             }
         },
         mounted() {
-            let self = this;
-            myOctokitHelper.getProjectTask(this.repoName, function (task) {
+            let self = this,
+                completeRepoName = this.repoName + '-' + this.authorGitHubLogin;
+            myOctokitHelper.getProjectTask(completeRepoName, function (task) {
                 self.taskDescription = task;
             });
+            console.log(this.repoName);
+            console.log(this.repoAuthor);
             myFirebaseHelper.getTestingErrors(this.repoName, this.repoAuthor, function (testingErrors) {
+                console.log('Hello');
                 if (testingErrors === '') {
                     self.testingErrors = self.noTestingErrors;
                 } else {
@@ -51,6 +58,7 @@
                 }
             });
             myFirebaseHelper.getExtensions(this.repoName, this.repoAuthor, function (extensions) {
+                console.log(extensions);
                 if (extensions === '') {
                     self.extensions = self.noExtensions;
                 } else {

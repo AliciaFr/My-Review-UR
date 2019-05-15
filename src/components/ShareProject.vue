@@ -48,6 +48,7 @@
 
 <script>
     import FirebaseHelper from '../javascript/FirebaseHelper';
+    import {EventBus} from '../main';
 
     let firebaseHelper = new FirebaseHelper();
 
@@ -67,7 +68,9 @@
                 let self = this;
                 let uid = this.$route.params.uid;
                 firebaseHelper.getRepoId(self.repoTitle, uid).then(function (repoId) {
+                    console.log(repoId);
                     firebaseHelper.getRepoForAssigning(uid, self.repoTitle, function (repo) {
+                        console.log(repo);
                         firebaseHelper.setReview(repoId, repo.author, self.getTodaysDate());
                     });
                 });
@@ -75,6 +78,7 @@
             publishRepo: function () {
                 firebaseHelper.setRepo(this.repoTitle, this.$route.params.uid, this.testingErrors, this.extensions);
                 this.assignRepo();
+                EventBus.$emit('onProjectShared', this.repoTitle);
                 this.$router.replace('home');
             },
             cancel: function () {
@@ -90,6 +94,7 @@
 <style>
     .share-project {
         padding-top: 5em;
+        padding-bottom: 10em;
     }
 </style>
 

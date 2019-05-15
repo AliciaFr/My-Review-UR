@@ -2,18 +2,28 @@
     <div class="create-review">
         <sui-grid :columns="16" stackable>
             <sui-grid-row stretched>
-                <sui-grid-column :width="2"></sui-grid-column>
-                <sui-grid-column :width="12">
+                <sui-grid-column :width="3"></sui-grid-column>
+                <sui-grid-column :width="7">
                     <sui-header size="huge">
                         {{ repoTitle }}
-                        <sui-header-subheader>{{ repoAuthor }}</sui-header-subheader>
+                        <sui-header-subheader>
+                            <div>
+                                <sui-image :src="reviewerAvatar" avatar></sui-image>
+                                <span>{{ repoAuthor }}</span>
+                            </div>
+                        </sui-header-subheader>
                     </sui-header>
+
+                </sui-grid-column>
+                <sui-grid-column :width="6">
+                    <sui-icon :class="['help-icon', { hidden: hideHelp }]" name="question circle" size="big" color="blue" fitted
+                              @click="toggleHelp"></sui-icon>
                 </sui-grid-column>
                 <sui-grid-column :width="2"></sui-grid-column>
             </sui-grid-row>
             <sui-grid-row stretched>
-                <sui-grid-column :width="2"></sui-grid-column>
-                <sui-grid-column :width="12">
+                <sui-grid-column :width="3"></sui-grid-column>
+                <sui-grid-column :width="10">
                     <div class="create-review-nav">
                         <sui-menu pointing secondary>
                             <a is="sui-menu-item"
@@ -30,17 +40,24 @@
                                    class="tab"
                                    :prevRoute="prevRoute"
                                    :branchSha="branchSha"
+                                   :repoTitle="repoTitle"
                                    :repoName="repoTitle"
+                                   :completeRepoName="completeRepoName"
                                    :repoAuthor="repoAuthor"
+                                   :repoAuthorId="repoAuthorId"
+                                   :authorGitHubLogin="authorGitHubLogin"
                                    :reviewer="reviewer"
-                        :reviewId="reviewId">
+                                   :beforeReviewSha="beforeReviewSha"
+                                   :reviewId="reviewId">
 
                         </component>
                     </keep-alive>
                     <div class="create-review-buttons">
-                        <sui-button @click.native="toggleCancel()" icon="cancel" label-position="left" floated="left">{{ backButton }}
+                        <sui-button @click.native="toggleCancel()" icon="cancel" label-position="left" floated="left">
+                            {{ backButton }}
                         </sui-button>
-                        <sui-button :class="{ hidden: lastTab }" icon="right arrow" label-position="right" floated="right" color="black"
+                        <sui-button :class="{ hidden: lastTab }" icon="right arrow" label-position="right"
+                                    floated="right" color="black"
                                     @click="handleForwardButton(forwardButton)">{{ forwardButton }}
                         </sui-button>
                         <sui-modal v-model="openCancel" animation="fly up" :closable="false">
@@ -61,7 +78,7 @@
                                 </sui-button>
                             </sui-modal-actions>
                         </sui-modal>
-                        <sui-modal v-model="openWarning" animation="fly up" :closable="false">
+                        <sui-modal v-model="openWarning" animation="fly up" :closable="true">
                             <sui-modal-header>Achtung</sui-modal-header>
                             <sui-modal-content>
                                 <sui-modal-description>
@@ -71,9 +88,33 @@
                                 </sui-modal-description>
                             </sui-modal-content>
                             <sui-modal-actions>
-                                <sui-button positive @click.native="toggleWarning">
-                                    OK
-                                </sui-button>
+                                <sui-button positive @click.native="toggleWarning">OK</sui-button>
+                            </sui-modal-actions>
+                        </sui-modal>
+                        <sui-modal v-model="openHelp" animation="scale" dimmer="inverted" :closable="true">
+                            <sui-modal-header>Wichtiger Hinweis zur Erstellung von Reviews</sui-modal-header>
+                            <sui-modal-content  :scrolling="true">
+                                <sui-modal-description>
+                                    <sui-header>Wie gehe ich bei der Erstellung eines Reviews vor?</sui-header>
+                                    <span><p>Um einen Überblick zu bekommen, solltest du dir die zunächst Aufgabenstellung, Testing-Fehler, die der Autor des Codes angegeben hat und seine Erweiterungen der Aufgabenstellung durchlesen.</p>
+                                    <p>Dann solltest du dir einen groben Überblick über den Code verschaffen, indem du alle relevanten Dateien ansiehst.</p>
+                                    <p>Nun bist du bereit, um mit dem Erstellen des Reviews zu beginnen.</p></span>
+                                    <sui-header>Wie erstelle ich ein Review?</sui-header>
+                                    <sui-message warning icon="warning circle">
+                                        <sui-message-header>Achtung!</sui-message-header>
+                                        <sui-message-content>
+                                            Bitte lösche oder verändere den Code nicht, sondern kommentiere deine Anmerkungen stattdessen aus.
+                                        </sui-message-content>
+                                    </sui-message>
+                                    <p>Fällt dir im Code etwas auf, was du anmerken möchtest, kannst du dies durch einen Kommentar machen. (siehe Abbildung)</p>
+                                    <p>Damit du im Blick behälst, auf welche Aspekte du beim Erstellen des Reviews achten solltest, steht dir in dem Code-Editor im Menü rechts oben ein Checkliste zur Verfügung.</p>
+                                    <img wrapped size="medium" src="../assets/code-review-example.png">
+                                </sui-modal-description>
+
+                                </sui-modal-content>
+
+                            <sui-modal-actions>
+                                <sui-button positive @click.native="toggleHelp">OK</sui-button>
                             </sui-modal-actions>
                         </sui-modal>
                     </div>
@@ -116,25 +157,56 @@
                 currentTab: tabs[0],
                 openCancel: false,
                 openWarning: false,
+                openHelp: true,
+                hideHelp: false,
                 branchSha: '',
+                beforeReviewSha: '',
                 repoTitle: '',
+                completeRepoName: this.repoTitle,
                 repoAuthor: '',
+                repoAuthorId: '',
+                reviewerAvatar: '',
                 prevRoute: '',
                 forwardButton: 'Weiter zum Code',
                 backButton: '',
-                commitSha: '',
+                reviewSha: '',
                 reviewId: '',
                 reviewer: '',
-                lastTab: false
+                lastTab: false,
+                authorGitHubLogin: ''
             };
         },
         created() {
-            this.repoTitle = this.$route.params.repoTitle;
-            this.repoAuthor = this.$route.params.repoAuthor;
-            this.prevRoute = this.$route.params.prevRoute;
-            this.branchSha = this.$route.params.branchSha;
+            this.setData();
             if (this.prevRoute === 'reviews') {
+                this.setupReviewView();
+            } else if (this.prevRoute === 'dashboard') {
+                for (let i = 0; i < this.tabs.length; i++) {
+                    if (this.tabs[i].title === 'Bewertung des Reviews') {
+                        this.tabs.pop();
+                    }
+                }
+                this.setBackButtonTitle('Abbrechen');
+                this.reviewer = localStorageHelper.getUserId();
+            }
+        },
+        methods: {
+            setData () {
+                this.repoTitle = this.$route.params.repoTitle;
+                this.repoAuthor = this.$route.params.repoAuthor;
+                this.repoAuthorId = this.$route.params.repoAuthorId;
+                this.authorGitHubLogin = this.$route.params.authorGitHubLogin;
+                this.reviewerAvatar = this.$route.params.reviewerAvatar;
+                this.prevRoute = this.$route.params.prevRoute;
+                this.branchSha = this.$route.params.branchSha;
+                this.completeRepoName = this.repoTitle + '-' + this.authorGitHubLogin;
+            },
+            setupReviewView () {
+                this.setAvatar(localStorageHelper.getUserId());
+                this.openHelp = false;
+                this.hideHelp = true;
                 this.reviewId = this.$route.params.id;
+                this.beforeReviewSha = this.$route.params.beforeReviewSha;
                 this.getReviewer();
                 if (this.tabs[this.tabs.length - 1].title !== 'Bewertung des Reviews') {
                     this.tabs.push({
@@ -143,18 +215,8 @@
                         id: 3
                     });
                 }
-
                 this.setBackButtonTitle('Schließen');
-            } else if (this.prevRoute === 'dashboard') {
-                for (let i = 0; i < this.tabs.length; i++) {
-                    if (this.tabs[i].title === 'Bewertung des Reviews') {
-                        this.tabs.pop();
-                    }
-                }
-                this.setBackButtonTitle('Abbrechen');
-            }
-        },
-        methods: {
+            },
             toggleCancel() {
                 if (this.prevRoute === 'dashboard') {
                     this.openCancel = !this.openCancel;
@@ -165,18 +227,21 @@
             toggleWarning() {
                 this.openWarning = !this.openWarning
             },
+            toggleHelp () {
+                this.openHelp = !this.openHelp
+            },
             createReview: function () {
                 let self = this;
                 let editedFiles = localStorageHelper.getAllFiles();
-                let repo = this.repoTitle;
-                let repoOwner = this.repoAuthor;
-                let reviewer = localStorageHelper.getUserId();
                 if (editedFiles !== null) {
-                    myFirebaseHelper.getReviewBranchSha(repo, repoOwner, reviewer, function (commitSha) {
-                        repoOwner = repoOwner.replace(/\s/g, '-');
-                        octokitHelper.createBranch(repo, repoOwner, commitSha, editedFiles);
+                    myFirebaseHelper.getReviewBranchSha(this.repoTitle, this.repoAuthorId, this.reviewer, function (reviewSha) {
+                        let repoOwner = self.repoAuthor.replace(/\s/g, '-');
+                        console.log(repoOwner);
+                        let fullRepoName = self.repoTitle + '-' + localStorageHelper.getGitHubLogin();
+                        octokitHelper.createBranch(fullRepoName, repoOwner, reviewSha, editedFiles);
                     });
-                    myFirebaseHelper.setReviewStatus(repo, repoOwner, "completed", self.getTodaysDate());
+                    myFirebaseHelper.setReviewStatus(this.repoTitle, this.repoAuthorId, "completed", self.getTodaysDate());
+                    EventBus.$emit('onProjectReviewed', this.repoTitle);
                     self.goToHome();
                     localStorageHelper.deleteAllFiles();
                 } else {
@@ -207,6 +272,7 @@
                 this.backButton = buttonTitle;
             },
             handleForwardButton (buttonTitle) {
+                console.log(buttonTitle);
                 if (this.prevRoute === 'dashboard') {
                     if (buttonTitle === 'Weiter zum Code') {
                         this.changeTab(tabs[1]);
@@ -234,6 +300,12 @@
             },
             getTodaysDate () {
                 return new Date().toLocaleDateString();
+            },
+            setAvatar (uid) {
+                let self = this;
+                myFirebaseHelper.getProfilePicture(uid, function (imgUrl) {
+                    self.reviewerAvatar = imgUrl;
+                });
             }
         }
     }
@@ -241,6 +313,10 @@
 </script>
 
 <style>
+    .help-icon {
+        cursor: pointer;
+    }
+
     .create-review {
         padding-top: 5em;
         padding-bottom: 10em;
@@ -248,5 +324,9 @@
 
     .create-review-buttons {
         padding-top: 1em;
+    }
+
+    .hidden {
+        display: none;
     }
 </style>

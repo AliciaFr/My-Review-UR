@@ -26,7 +26,7 @@ ReviewsForUserFetcherTask.prototype.filterReviewsForUser = function (callback) {
                 repos.push({
                     id: child.key,
                     name: repo,
-                    commitSha: child.val().commit_sha,
+                    reviewSha: child.val().review_sha,
                     author: that.uid,
                     reviewer: child.val().reviewer,
                     date: child.val().reviewDate
@@ -35,6 +35,7 @@ ReviewsForUserFetcherTask.prototype.filterReviewsForUser = function (callback) {
         });
         callback(repos);
     });
+
 };
 
 ReviewsForUserFetcherTask.prototype.checkReposForName = function (repos) {
@@ -87,7 +88,7 @@ ReviewsForUserFetcherTask.prototype.getRepoName = function (repo) {
                 if (repo.name === child.key) {
                     resolve({
                         id: repo.id,
-                        commitSha: repo.commitSha,
+                        reviewSha: repo.reviewSha,
                         repo: child.val().name,
                         author: child.val().owner,
                         reviewer: repo.reviewer,
@@ -97,6 +98,7 @@ ReviewsForUserFetcherTask.prototype.getRepoName = function (repo) {
             });
         });
     });
+    console.log(repo.reviewSha);
     return myPromise;
 };
 

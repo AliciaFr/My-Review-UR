@@ -2,14 +2,46 @@
  * Created by Alicia on 01.04.2019.
  */
 
+const UID = 'uid';
+const GITHUB_LOGIN = 'gitHubLogin';
+const USERNAME = 'username';
+const PROFILE_PICTURE = 'profilePicture';
+const ALL_FILES = 'allFiles';
+const FILE = 'file';
+const COMMIT_DIFF = 'commitDiff';
+
 function LocalStorageHelper () {}
 
 LocalStorageHelper.prototype.addUserId = function (uid) {
-    localStorage.setItem('uid', uid);
+    localStorage.setItem(UID, uid);
 };
 
 LocalStorageHelper.prototype.getUserId = function () {
-    return localStorage.getItem('uid');
+    return localStorage.getItem(UID);
+};
+
+LocalStorageHelper.prototype.addUsername = function (username) {
+  localStorage.setItem(USERNAME, username);
+};
+
+LocalStorageHelper.prototype.getUsername = function () {
+    return localStorage.getItem(USERNAME);
+};
+
+LocalStorageHelper.prototype.addProfilePicture = function (profilePicture) {
+    localStorage.setItem(PROFILE_PICTURE, profilePicture);
+};
+
+LocalStorageHelper.prototype.getProfilePicture = function () {
+    return localStorage.getItem(PROFILE_PICTURE);
+};
+
+LocalStorageHelper.prototype.addGitHubLogin = function (gitHubLogin) {
+    localStorage.setItem(GITHUB_LOGIN, gitHubLogin);
+};
+
+LocalStorageHelper.prototype.getGitHubLogin = function () {
+    return localStorage.getItem(GITHUB_LOGIN);
 };
 
 LocalStorageHelper.prototype.addEntry = function (name, fileSha, filePath, content) {
@@ -23,13 +55,13 @@ LocalStorageHelper.prototype.addEntry = function (name, fileSha, filePath, conte
     if(existingFiles === null) {
         existingFiles = [];
     }
-    localStorage.setItem("file", JSON.stringify(file));
+    localStorage.setItem(FILE, JSON.stringify(file));
     existingFiles.push(file);
-    localStorage.setItem("allFiles", JSON.stringify(existingFiles));
+    localStorage.setItem(ALL_FILES, JSON.stringify(existingFiles));
 };
 
 LocalStorageHelper.prototype.getAllFiles = function () {
-    return JSON.parse(localStorage.getItem("allFiles"));
+    return JSON.parse(localStorage.getItem(ALL_FILES));
 };
 
 LocalStorageHelper.prototype.getFile = function (fileName) {
@@ -53,12 +85,20 @@ LocalStorageHelper.prototype.updateFileContent = function (fileName, content) {
             }
         }
     }
-    localStorage.setItem("allFiles", JSON.stringify(existingFiles));
+    localStorage.setItem(ALL_FILES, JSON.stringify(existingFiles));
 };
 
 LocalStorageHelper.prototype.deleteAllFiles = function () {
-    localStorage.removeItem('allFiles');
-    localStorage.removeItem('file');
+    localStorage.removeItem(ALL_FILES);
+    localStorage.removeItem(FILE);
+};
+
+LocalStorageHelper.prototype.addCommitDiff = function (changedFiles) {
+  localStorage.setItem(COMMIT_DIFF, JSON.stringify(changedFiles));
+};
+
+LocalStorageHelper.prototype.getCommitDiff = function () {
+    return JSON.parse(localStorage.getItem(COMMIT_DIFF));
 };
 
 export default LocalStorageHelper;
