@@ -38,16 +38,16 @@ Students have to fill in a form where they can specify testing errors of their p
 
 ![Release form](https://github.com/AliciaFr/My-Review-UR/blob/master/src/assets/Prototyp-Projektfreigabe.PNG?raw=true)
 
-#### Create A Review
-An Overview gives the user important information about the project.
+#### Creating A Review
+An overview gives the user important information about the project.
 
 ![Project Overview](https://github.com/AliciaFr/My-Review-UR/blob/master/src/assets/Prototyp-Review-erstellen-Uebersicht.PNG?raw=true)
 
-When users want to review a project, a modal providing a guidline for reviewing projects shows up.
+When users want to review a project, a modal providing a guideline for reviewing projects shows up.
 
 ![Guideline](https://github.com/AliciaFr/My-Review-UR/blob/master/src/assets/Prototyp-Review-erstellen-Hinweis.PNG?raw=true)
 
-A checklist helps the user to find criteria to rate the code
+A checklist helps the user to find criteria to rate the code.
 
 ![Checklist](https://github.com/AliciaFr/My-Review-UR/blob/master/src/assets/Prototyp-Checkliste.PNG?raw=true)
 
@@ -55,13 +55,13 @@ A checklist helps the user to find criteria to rate the code
 Review comments are higlighted in the code editor and the file path of changed files is highlighted in the project structure.
 ![View Reviews](https://github.com/AliciaFr/My-Review-UR/blob/master/src/assets/Prototyp-Review-Ansicht.PNG?raw=true)
 
-#### Rate a review
+#### Rating a review
 To rate a received review users have to fill in a short form.
 
 ![Rate A Review](https://github.com/AliciaFr/My-Review-UR/blob/master/src/assets/Usability-Problem-Review-Button.PNG?raw=true)
 
 
-### Installation
+### How To Use
 
 ``` bash
 # install dependencies
